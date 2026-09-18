@@ -1,0 +1,182 @@
+{
+  "version": 3,
+  "pages404": true,
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [
+    {
+      "page": "/api/documents/[id]/file",
+      "regex": "^/api/documents/([^/]+?)/file(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/api/documents/(?<nxtPid>[^/]+?)/file(?:/)?$"
+    },
+    {
+      "page": "/documents/[userId]",
+      "regex": "^/documents/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPuserId": "nxtPuserId"
+      },
+      "namedRegex": "^/documents/(?<nxtPuserId>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/permissions/user/[id]",
+      "regex": "^/permissions/user/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/permissions/user/(?<nxtPid>[^/]+?)(?:/)?$"
+    },
+    {
+      "page": "/users/[id]",
+      "regex": "^/users/([^/]+?)(?:/)?$",
+      "routeKeys": {
+        "nxtPid": "nxtPid"
+      },
+      "namedRegex": "^/users/(?<nxtPid>[^/]+?)(?:/)?$"
+    }
+  ],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/attendance",
+      "regex": "^/attendance(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/attendance(?:/)?$"
+    },
+    {
+      "page": "/documents",
+      "regex": "^/documents(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/documents(?:/)?$"
+    },
+    {
+      "page": "/documents/me",
+      "regex": "^/documents/me(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/documents/me(?:/)?$"
+    },
+    {
+      "page": "/home",
+      "regex": "^/home(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/home(?:/)?$"
+    },
+    {
+      "page": "/icon.png",
+      "regex": "^/icon\\.png(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/icon\\.png(?:/)?$"
+    },
+    {
+      "page": "/id-card",
+      "regex": "^/id\\-card(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/id\\-card(?:/)?$"
+    },
+    {
+      "page": "/leave",
+      "regex": "^/leave(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/leave(?:/)?$"
+    },
+    {
+      "page": "/login",
+      "regex": "^/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/more",
+      "regex": "^/more(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/more(?:/)?$"
+    },
+    {
+      "page": "/more/change-password",
+      "regex": "^/more/change\\-password(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/more/change\\-password(?:/)?$"
+    },
+    {
+      "page": "/more/profile",
+      "regex": "^/more/profile(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/more/profile(?:/)?$"
+    },
+    {
+      "page": "/permissions",
+      "regex": "^/permissions(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/permissions(?:/)?$"
+    },
+    {
+      "page": "/settings",
+      "regex": "^/settings(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/settings(?:/)?$"
+    },
+    {
+      "page": "/tasks",
+      "regex": "^/tasks(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/tasks(?:/)?$"
+    },
+    {
+      "page": "/users",
+      "regex": "^/users(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/users(?:/)?$"
+    },
+    {
+      "page": "/users/new",
+      "regex": "^/users/new(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/users/new(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSuffix": ".prefetch.rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments"
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}

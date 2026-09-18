@@ -1,0 +1,49 @@
+Live Console HR — ready-to-upload build
+=======================================
+
+This branch IS the deployable app. Nothing here needs npm or a build step:
+the host only runs `node server.js`.
+
+UPLOAD
+------
+1. Control panel -> File Manager -> open the task.kriviinfotech.com folder.
+2. DELETE the host's default index.html. IIS serves it ahead of the app and
+   you will keep seeing the placeholder page until it is gone.
+3. Upload everything from this branch into that folder (or upload the zip
+   and use Extract, which is much faster than file-by-file FTP).
+4. Control panel -> Hosting Manager -> Node.js: enable Node for this site
+   and folder.
+
+CREATE .env  (REQUIRED — the app will not start without it)
+-----------------------------------------------------------
+In File Manager, create a file named  .env  in the same folder as
+server.js, with these five lines. Fill in the two database URLs from your
+site4now panel and paste the AUTH_SECRET value that was given to you.
+
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:6432/DBNAME?pgbouncer=true&connection_limit=1&sslmode=prefer"
+DIRECT_DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DBNAME?sslmode=prefer"
+AUTH_SECRET="paste-the-long-random-string-here"
+UPLOAD_DIR="./App_Data/uploads"
+SMS_PROVIDER="console"
+
+Notes:
+- Port 6432 is a PgBouncer pooler, so pgbouncer=true and connection_limit=1
+  are required. Port 5432 is the direct connection, used only by migrations.
+- If the password contains @ or : or /, URL-encode it (@ becomes %40).
+- Keep .env in this folder only. web.config already blocks it over HTTP.
+
+DATABASE TABLES
+---------------
+The tables must exist before first sign-in. Either run
+`npx prisma migrate deploy` from a machine that can reach port 5432, or
+paste prisma/migrations/<timestamp>_init/migration.sql into the panel's
+PostgreSQL query tool. Then seed the super admin (see DEPLOY.md on the
+main branch).
+
+IF THE SITE 500s IMMEDIATELY
+----------------------------
+The account is probably wired for iisnode rather than httpPlatformHandler.
+Open web.config, comment out the <handlers> + <httpPlatform> block and
+uncomment the iisnode block below it. No rebuild needed.
+
+Full runbook: DEPLOY.md on the claude/vibrant-tesla-iherdc branch.
