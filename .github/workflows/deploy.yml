@@ -124,6 +124,68 @@ jobs:
           FTP_REMOTE: ${{ vars.FTP_REMOTE || '/' }}
         run: node scripts/ftp-deploy.mjs --logs
 
+      - name: Smoke-test the live routes
+        env:
+          HOST_NAME: ${{ vars.SITE_HOST || 'task.kriviinfotech.com' }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+        run: |
+          # Checks what the deployed app actually does, not just that something
+          # answers. Reports and exits 0 at the end; the per-route verdicts are
+          # what to read.
+          set +e
+          base="http://$HOST_NAME"
+          failures=0
+
+          probe() {
+            local path="$1" want="$2" label="$3"
+            local code
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 45 "$base$path")
+            if echo "$want" | tr ' ' '\n' | grep -qx "$code"; then
+              echo "  ok    $label ($path -> $code)"
+            else
+              echo "  FAIL  $label ($path -> $code, wanted one of: $want)"
+              failures=$((failures + 1))
+            fi
+          }
+
+          echo "=== routes ==="
+          probe /login 200 "login page renders"
+          # A signed-out request must be redirected, never served the screen.
+          probe /phonebook "307 302" "phone book requires a session"
+          probe /licenses "307 302" "licenses require a session"
+          probe /tasks "307 302" "tasks require a session"
+          # The cron routes are public URLs; the token is all that guards them.
+          probe /api/cron/reminders 401 "reminders refuse an unauthenticated call"
+          probe /api/cron/backup 401 "backup refuses an unauthenticated call"
+          probe "/api/cron/reminders?token=wrong" 401 "reminders refuse a wrong token"
+          # .env sits at the site root and must never be readable over HTTP.
+          probe /.env "404 403" ".env is not served"
+
+          echo
+          echo "=== the reminder run itself ==="
+          token=$(bash scripts/cron-token.sh)
+          if [ -z "$token" ]; then
+            echo "  skipped: neither CRON_SECRET nor AUTH_SECRET is set"
+          else
+            # Safe to call: idempotent per India-local day, and nothing is texted
+            # while SMS_PROVIDER is console.
+            body=$(curl -s --max-time 60 "$base/api/cron/reminders?token=$token")
+            echo "  response: ${body:0:300}"
+            case "$body" in
+              *'"ok":true'*) echo "  ok    the scheduler URL works" ;;
+              *) echo "  FAIL  the scheduler URL did not report ok"; failures=$((failures + 1)) ;;
+            esac
+          fi
+
+          echo
+          if [ "$failures" -eq 0 ]; then
+            echo "::notice::All live route checks passed."
+          else
+            echo "::warning::$failures live route check(s) failed — see above."
+          fi
+          exit 0
+
       - name: What does the site return, over both http and https
         env:
           HOST_NAME: ${{ vars.SITE_HOST || 'task.kriviinfotech.com' }}
