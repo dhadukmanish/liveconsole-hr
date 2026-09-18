@@ -92,7 +92,7 @@ export async function runReminders(): Promise<ReminderSummary> {
   // --- licences coming up for renewal -------------------------------------
   const licenses = await prisma.license.findMany({
     where: { isActive: true },
-    include: { owner: { select: { name: true, mobile: true } } },
+    include: { owner: { select: { name: true, mobile: true, status: true } } },
   });
 
   const admins = await adminRecipients();
@@ -114,8 +114,12 @@ export async function runReminders(): Promise<ReminderSummary> {
           : `expires in ${days} day(s)`;
     const message = `Reminder: ${license.name} ${when} (${formatDate(license.expiryDate)}).`;
 
-    // The owner if there is one, otherwise whoever can act on it.
-    const recipients = license.owner ? [license.owner] : admins;
+    // The owner if there is one and they are still here — a renewal chased at
+    // somebody who has left is a renewal nobody is chasing.
+    const recipients =
+      license.owner && license.owner.status === "ACTIVE"
+        ? [{ name: license.owner.name, mobile: license.owner.mobile }]
+        : admins;
     for (const recipient of recipients) {
       await send("LICENSE_EXPIRY", license.id, dayKey, recipient, message, summary);
     }
