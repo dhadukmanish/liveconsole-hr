@@ -15,6 +15,10 @@
  *   --dry-run         list what would be sent, connect to nothing
  *   --secure          use FTPS (explicit TLS)
  *   --port <n>        control port             (default: 21)
+ *   --list            print the remote folder listing and stop
+ *   --remove-default-index
+ *                     delete the host's placeholder index.html, which IIS
+ *                     otherwise serves ahead of the app
  *
  * Credentials are read from the environment (or a local .env.ftp) and are
  * never written to the repository.
@@ -52,6 +56,8 @@ const PORT = Number(option("port", process.env.FTP_PORT ?? 21));
 const LOCAL = path.resolve(option("dir", "deploy-payload"));
 const DRY = flag("dry-run");
 const ZIP_ONLY = flag("zip-only");
+const LIST_ONLY = flag("list");
+const REMOVE_INDEX = flag("remove-default-index");
 
 if (!DRY && (!HOST || !USER || !PASSWORD)) {
   console.error(
@@ -61,7 +67,7 @@ if (!DRY && (!HOST || !USER || !PASSWORD)) {
   process.exit(1);
 }
 
-if (!ZIP_ONLY && !existsSync(LOCAL)) {
+if (!ZIP_ONLY && !LIST_ONLY && !existsSync(LOCAL)) {
   console.error(`${LOCAL} does not exist. Run: npm run package`);
   process.exit(1);
 }
@@ -97,7 +103,37 @@ async function countFiles(dir) {
 
 const mb = (bytes) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 
+function connect(client) {
+  return client.access({
+    host: HOST,
+    port: PORT,
+    user: USER,
+    password: PASSWORD,
+    secure: flag("secure"),
+  });
+}
+
 async function main() {
+  if (LIST_ONLY) {
+    // Used on a first deploy to learn where the site actually lives: if the
+    // account does not land in the site root, FTP_REMOTE has to say so.
+    const client = new Client(60_000);
+    await connect(client);
+    const entries = await client.list(REMOTE);
+    console.log(`Remote listing of ${REMOTE} on ${HOST}:\n`);
+    for (const entry of entries) {
+      const kind = entry.isDirectory ? "dir " : "file";
+      console.log(`  ${kind}  ${String(entry.size).padStart(10)}  ${entry.name}`);
+    }
+    if (entries.some((entry) => entry.name === "index.html")) {
+      console.log(
+        "\n  index.html is present. IIS serves it ahead of the app, so it has to go.",
+      );
+    }
+    client.close();
+    return;
+  }
+
   if (ZIP_ONLY) {
     const zip = path.resolve("deploy-payload.zip");
     if (!existsSync(zip)) {
@@ -166,6 +202,19 @@ async function main() {
       secure: flag("secure"),
     });
     await client.ensureDir(REMOTE);
+
+    if (REMOVE_INDEX) {
+      // The host ships a placeholder index.html that IIS serves ahead of the
+      // Node app. This deploy never produces an index.html of its own, so
+      // removing it cannot delete anything of ours.
+      try {
+        await client.remove(path.posix.join(REMOTE, "index.html"));
+        console.log("  removed the host's placeholder index.html");
+      } catch {
+        console.log("  no index.html to remove");
+      }
+    }
+
     // uploadFromDir mirrors the tree, creating directories as needed. It
     // overwrites existing files, which is what a redeploy wants.
     await client.uploadFromDir(LOCAL, REMOTE);
