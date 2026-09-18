@@ -41,7 +41,7 @@ export default async function DocumentsIndexPage() {
             <li key={row.id}>
               <Link href={`/documents/${row.id}`} className="block">
                 <Card className="flex items-center gap-3 transition-colors hover:border-brand">
-                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand/15 text-sm font-bold text-brand-hover dark:text-brand">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand/15 text-sm font-bold text-brand-ink">
                     {initials(row.name)}
                   </div>
                   <div className="min-w-0 flex-1">

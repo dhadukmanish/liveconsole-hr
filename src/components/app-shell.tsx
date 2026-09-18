@@ -121,7 +121,7 @@ export function AppShell({
                   aria-current={active ? "page" : undefined}
                   className={cn(
                     "flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[0.6875rem] font-semibold",
-                    active ? "text-brand" : "text-muted",
+                    active ? "text-brand-ink" : "text-muted",
                   )}
                 >
                   <Icon className="h-6 w-6" aria-hidden />

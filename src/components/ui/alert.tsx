@@ -6,9 +6,9 @@ const alertVariants = cva("rounded-xl border px-3 py-2.5 text-sm font-medium", {
   variants: {
     tone: {
       info: "border-hairline bg-card text-ink",
-      success: "border-success/30 bg-success/10 text-success",
-      warning: "border-pending/40 bg-pending/15 text-[#8a5d00] dark:text-pending",
-      danger: "border-danger/30 bg-danger/10 text-danger",
+      success: "border-success/30 bg-success/10 text-success-ink",
+      warning: "border-pending/40 bg-pending/15 text-pending-ink",
+      danger: "border-danger/30 bg-danger/10 text-danger-ink",
     },
   },
   defaultVariants: { tone: "info" },

@@ -18,6 +18,10 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      // Generated upload payload and local runtime data, not source.
+      "deploy-payload/**",
+      ".pgdata/**",
+      "App_Data/**",
       "public/sw.js",
       "public/workbox-*.js",
     ],

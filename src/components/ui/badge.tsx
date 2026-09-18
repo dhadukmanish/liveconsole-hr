@@ -8,10 +8,10 @@ const badgeVariants = cva(
     variants: {
       tone: {
         neutral: "bg-hairline text-ink",
-        brand: "bg-brand/15 text-brand-hover dark:text-brand",
-        success: "bg-success/15 text-success",
-        pending: "bg-pending/20 text-[#8a5d00] dark:text-pending",
-        danger: "bg-danger/15 text-danger",
+        brand: "bg-brand/15 text-brand-ink",
+        success: "bg-success/15 text-success-ink",
+        pending: "bg-pending/20 text-pending-ink",
+        danger: "bg-danger/15 text-danger-ink",
       },
     },
     defaultVariants: { tone: "neutral" },

@@ -34,7 +34,7 @@ export async function DocumentList({
       {documents.map((document) => (
         <li key={document.id}>
           <Card className="flex items-center gap-3">
-            <FileText className="h-6 w-6 shrink-0 text-brand" aria-hidden />
+            <FileText className="h-6 w-6 shrink-0 text-brand-ink" aria-hidden />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-bold text-ink">{document.typeName}</p>
               <CardMuted className="truncate">

@@ -77,14 +77,14 @@ export default async function UserDetailPage({
 
       <div className="mb-4 flex flex-wrap gap-2 text-sm font-semibold">
         {can(actor, "DOCUMENTS", "VIEW") ? (
-          <Link href={`/documents/${target.id}`} className="text-brand underline underline-offset-4">
+          <Link href={`/documents/${target.id}`} className="text-brand-hover dark:text-brand underline underline-offset-4">
             {t("documents.title")}
           </Link>
         ) : null}
         {actor.isSuperAdmin ? (
           <Link
             href={`/permissions/user/${target.id}`}
-            className="text-brand underline underline-offset-4"
+            className="text-brand-hover dark:text-brand underline underline-offset-4"
           >
             {t("permissions.userOverrides")}
           </Link>

@@ -19,6 +19,13 @@
      WCAG AA (4.5:1) and is hard to read outdoors on a phone; the ink colour on
      the same orange is 6.2:1. The orange itself is unchanged from the brand. */
   --on-brand: #2c2c2a;
+  /* Ink colours for small text sitting on a 15-20% tint of the accent. The
+     accents themselves are tuned for fills, and at text size on a pale tint
+     they land near 3:1; these darkened tones clear 4.5:1. */
+  --brand-ink: #8a4b00;
+  --success-ink: #0f5f46;
+  --danger-ink: #a32115;
+  --pending-ink: #7a4e00;
 }
 
 .dark {
@@ -28,6 +35,12 @@
   --muted: #a8a49a;
   --hairline: #3a3934;
   /* brand orange is unchanged in dark mode, per the brand spec */
+  /* On dark tints the relationship inverts: the bright accents are the
+     readable ones. */
+  --brand-ink: #f7941d;
+  --success-ink: #4fd1a5;
+  --danger-ink: #ff8a7a;
+  --pending-ink: #fbb03b;
 }
 
 @theme inline {
@@ -42,6 +55,10 @@
   --color-pending: var(--pending);
   --color-success: var(--success);
   --color-on-brand: var(--on-brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-success-ink: var(--success-ink);
+  --color-danger-ink: var(--danger-ink);
+  --color-pending-ink: var(--pending-ink);
 
   --font-sans: var(--font-mukta), var(--font-mukta-vaani), ui-sans-serif,
     system-ui, sans-serif;

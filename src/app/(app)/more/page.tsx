@@ -45,7 +45,7 @@ export default async function MorePage() {
       <Card className="mb-4 py-1">
         {links.map((link) => (
           <Link key={link.href} href={link.href} className={ROW}>
-            <link.icon className="h-5 w-5 text-brand" aria-hidden />
+            <link.icon className="h-5 w-5 text-brand-ink" aria-hidden />
             <span className="flex-1">{link.label}</span>
             <ChevronRight className="h-5 w-5 text-muted" aria-hidden />
           </Link>
