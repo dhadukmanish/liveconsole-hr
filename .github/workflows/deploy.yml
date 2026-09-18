@@ -44,6 +44,7 @@ jobs:
     outputs:
       deploy: ${{ steps.decide.outputs.deploy }}
       seed: ${{ steps.decide.outputs.seed }}
+      inspect: ${{ steps.decide.outputs.inspect }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -59,6 +60,7 @@ jobs:
 
           deploy=false
           seed=false
+          inspect=false
 
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             deploy=true
@@ -66,11 +68,55 @@ jobs:
           else
             case "$subject" in *"[deploy]"*) deploy=true ;; esac
             case "$subject" in *"[seed]"*) seed=true ;; esac
+            case "$subject" in *"[inspect]"*) inspect=true ;; esac
           fi
 
           echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
           echo "seed=$seed" >> "$GITHUB_OUTPUT"
-          echo "decision: deploy=$deploy seed=$seed"
+          echo "inspect=$inspect" >> "$GITHUB_OUTPUT"
+          echo "decision: deploy=$deploy seed=$seed inspect=$inspect"
+
+  inspect:
+    # Thirty seconds instead of a fifteen-minute deploy, for answering "where did
+    # the files land and what does the site actually return?"
+    needs: gate
+    if: needs.gate.outputs.inspect == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Remote folder listing
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_REMOTE: ${{ vars.FTP_REMOTE || '/' }}
+        run: node scripts/ftp-deploy.mjs --list
+
+      - name: What does the site return, over both http and https
+        env:
+          HOST_NAME: ${{ vars.SITE_HOST || 'task.kriviinfotech.com' }}
+        run: |
+          for scheme in http https; do
+            for path in / /login; do
+              url="$scheme://$HOST_NAME$path"
+              out=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "$url" 2>&1)
+              rc=$?
+              if [ "$rc" -ne 0 ]; then
+                echo "$url -> curl failed (exit $rc): $(curl -s -S -o /dev/null --max-time 30 "$url" 2>&1 | head -1)"
+              else
+                echo "$url -> HTTP $out"
+              fi
+            done
+          done
+          echo
+          echo "Response headers for http://$HOST_NAME/login:"
+          curl -s -I --max-time 30 "http://$HOST_NAME/login" 2>&1 | head -12 || true
 
   deploy:
     needs: gate
@@ -234,13 +280,27 @@ jobs:
         run: |
           echo "Giving IIS a moment to start the Node process..."
           sleep 25
+
+          host=$(echo "$SITE_URL" | sed -E 's#^https?://##; s#/.*##')
+
           for attempt in 1 2 3 4 5 6; do
-            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 60 "$SITE_URL/login" || echo 000)
-            echo "attempt $attempt: $SITE_URL/login -> $code"
-            if [ "$code" = "200" ]; then
-              echo "::notice::Site is up: $SITE_URL/login"
-              exit 0
-            fi
+            # Try HTTPS and plain HTTP: the subdomain may not have a certificate
+            # yet, and "no answer at all" reads very differently from "404".
+            for url in "https://$host/login" "http://$host/login"; do
+              code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 45 "$url")
+              if [ -z "$code" ]; then code="no-response"; fi
+              echo "attempt $attempt: $url -> $code"
+              if [ "$code" = "200" ]; then
+                echo "::notice::Site is up: $url"
+                exit 0
+              fi
+            done
             sleep 20
           done
-          echo "::warning::The site did not answer with 200 yet. Check logs/ on the host, and that Node.js is enabled for the site folder."
+
+          echo "::warning::The site is not serving the app yet."
+          echo "  404 means IIS is serving the folder but not handing requests to Node:"
+          echo "  enable Node.js for this site in the control panel, or switch web.config"
+          echo "  to the iisnode block."
+          echo "  No response at all over https usually means the subdomain has no"
+          echo "  certificate yet."
