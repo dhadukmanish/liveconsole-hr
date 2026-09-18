@@ -26,7 +26,10 @@ menus are hard to reach):
 | `AUTH_SECRET` | 32+ random characters; changing it later signs everyone out |
 
 Optional: `SUPERADMIN_PASSWORD` (otherwise one is generated and printed once),
-and the three `MSG91_*` secrets when SMS goes live.
+`CRON_SECRET` (the reminder and backup URLs are guarded by it; leave it unset
+and one is derived from `AUTH_SECRET`), and the `MSG91_*` secrets when SMS goes
+live — `MSG91_AUTH_KEY`, `MSG91_SENDER_ID`, `MSG91_TEMPLATE_ID` for login codes
+and `MSG91_REMINDER_TEMPLATE_ID` for reminders, which need a separate template.
 
 ### Then the variables
 
@@ -68,6 +71,45 @@ been edited in the app — but it is opt-in so a routine deploy cannot touch
 account data.
 
 A push **without** `[deploy]` builds nothing and changes nothing on the host.
+
+### Other markers, none of which upload anything
+
+| Marker | What it does |
+| --- | --- |
+| `[seed]` | with `[deploy]`, creates roles, permissions, masters and the super admin |
+| `[inspect]` | lists what is on the host, pulls its logs and checks what the live URLs return — about forty seconds |
+| `[handler]` | swaps the IIS handler, for when the site answers an empty 500 |
+| `[reset-admin]` | resets the super admin password from `SUPERADMIN_PASSWORD` |
+| `[cron-url]` | prints the daily reminder URL into the run summary |
+
+---
+
+## Once: the two scheduled jobs
+
+The host has no scheduler of its own, so nothing reminds anybody and nothing
+backs up until these two exist. Both are free and take a few minutes on a phone.
+
+1. Push a commit whose first line contains `[cron-url]`. Open the run (Actions
+   tab → the run → **Summary**) and copy the URL it prints. It contains the
+   token, so treat it like a password.
+2. Sign up at [cron-job.org](https://cron-job.org) and create:
+
+   | Job | URL | When |
+   | --- | --- | --- |
+   | Reminders | the URL from step 1 | daily, 09:00, timezone **Asia/Kolkata** |
+   | Backup | the same URL with `/reminders` changed to `/backup` | weekly, Sunday 02:00 |
+
+3. Hit **Test run** on each. `{"ok":true,...}` means it works.
+   `{"error":"unauthorized"}` means the token does not match the host.
+
+Calling either one twice does no harm: the reminder run sends nothing the second
+time the same day, and the backup overwrites that day's file instead of piling
+up copies. Backups land in `App_Data/backups` on the host — download them over
+FTP now and then, because a backup that only lives on the same server is not
+really a backup.
+
+While `SMS_PROVIDER` is still `console`, reminders are written to `logs/` on the
+host instead of being texted.
 
 ## What the workflow does, in order
 
