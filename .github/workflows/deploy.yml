@@ -409,6 +409,10 @@ jobs:
         env:
           SITE_URL: ${{ vars.SITE_URL || 'https://task.kriviinfotech.com' }}
         run: |
+          # No -e: the https attempt fails while the subdomain has no
+          # certificate, and that must not abort the check before http is tried.
+          set +e
+
           echo "Giving IIS a moment to start the Node process..."
           sleep 25
 
