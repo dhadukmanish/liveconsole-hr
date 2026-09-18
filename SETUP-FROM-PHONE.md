@@ -48,7 +48,9 @@ the database URLs are secrets and the rest are variables.
 
 ## Every deploy after that
 
-Put `[deploy]` anywhere in the commit message. That is the whole trigger:
+Put `[deploy]` in the **first line** of the commit message. That is the whole
+trigger — only the subject line is read, so writing about `[deploy]` further
+down in a commit body never ships anything:
 
 ```
 Fix the leave screen [deploy]

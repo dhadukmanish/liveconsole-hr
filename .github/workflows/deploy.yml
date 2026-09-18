@@ -4,8 +4,11 @@ name: Deploy to site4now
 # A build sandbox usually does not, which is the whole reason this exists.
 #
 # Triggers:
-#   - a push whose commit message contains [deploy]
+#   - a push whose commit SUBJECT (first line) contains [deploy]
 #   - the "Run workflow" button, once this file is on the default branch
+#
+# Only the subject line counts. Writing about [deploy] in a commit body must not
+# ship anything — that mistake already happened once.
 #
 # Add [seed] to the commit message as well to create the roles, permissions,
 # masters and the first SUPERADMIN. Seeding is idempotent, but it is opt-in so
@@ -33,11 +36,45 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  gate:
+    # Decides whether this push is asking to ship. Split out because a job-level
+    # `if` can only see the whole commit message, body included, and prose that
+    # merely mentions the marker must not deploy.
+    runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.decide.outputs.deploy }}
+      seed: ${{ steps.decide.outputs.seed }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - id: decide
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          DISPATCH_SEED: ${{ inputs.run_seed }}
+        run: |
+          subject=$(git log -1 --pretty=%s)
+          echo "commit subject: $subject"
+
+          deploy=false
+          seed=false
+
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            deploy=true
+            [ "$DISPATCH_SEED" = "true" ] && seed=true
+          else
+            case "$subject" in *"[deploy]"*) deploy=true ;; esac
+            case "$subject" in *"[seed]"*) seed=true ;; esac
+          fi
+
+          echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
+          echo "seed=$seed" >> "$GITHUB_OUTPUT"
+          echo "decision: deploy=$deploy seed=$seed"
+
   deploy:
-    # A push only deploys when it asks for it; the button always deploys.
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      contains(github.event.head_commit.message, '[deploy]')
+    needs: gate
+    if: needs.gate.outputs.deploy == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -124,9 +161,7 @@ jobs:
           echo "Migrations applied."
 
       - name: Seed roles, permissions, masters and the super admin
-        if: >-
-          (github.event_name == 'workflow_dispatch' && inputs.run_seed) ||
-          contains(github.event.head_commit.message, '[seed]')
+        if: needs.gate.outputs.seed == 'true'
         env:
           DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL || secrets.DATABASE_URL }}
           DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL || secrets.DATABASE_URL }}
