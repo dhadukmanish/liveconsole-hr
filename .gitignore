@@ -1,0 +1,6 @@
+# The environment file holds the database password and the session secret.
+# It belongs on the host only.
+.env
+
+# Your own SFTP config, which may contain the FTP password.
+.vscode/sftp.json

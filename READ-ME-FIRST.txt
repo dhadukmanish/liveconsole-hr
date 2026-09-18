@@ -20,6 +20,15 @@ Fastest: control panel -> File Manager -> upload the zip -> Extract.
 (FTP works too -- host win8194.site4now.net -- but it is 2,200 files and
 will take a long time file by file. Zip + Extract is minutes.)
 
+Using the VS Code SFTP extension? Open THIS folder in VS Code, then:
+
+    cp .vscode/sftp.sample.json .vscode/sftp.json
+
+Add your password to that file if you want it remembered (it is gitignored),
+check remotePath against the remote listing, then right-click the folder ->
+Upload Folder. Everything here is already built, so there is nothing to
+compile first.
+
 1. Open the task.kriviinfotech.com folder.
 2. DELETE the host's default index.html. IIS serves it ahead of the app and
    you will keep seeing the placeholder page until it is gone.

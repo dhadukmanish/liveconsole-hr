@@ -1,0 +1,10 @@
+{
+  "name": "task.kriviinfotech.com",
+  "host": "win8194.site4now.net",
+  "protocol": "ftp",
+  "port": 21,
+  "username": "taskconsole",
+  "remotePath": "/",
+  "uploadOnSave": false,
+  "ignore": [".git", ".vscode", ".DS_Store", "*.log", "logs"]
+}
