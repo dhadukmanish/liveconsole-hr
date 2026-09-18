@@ -46,6 +46,7 @@ jobs:
       seed: ${{ steps.decide.outputs.seed }}
       inspect: ${{ steps.decide.outputs.inspect }}
       handler: ${{ steps.decide.outputs.handler }}
+      resetadmin: ${{ steps.decide.outputs.resetadmin }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -63,6 +64,7 @@ jobs:
           seed=false
           inspect=false
           handler=false
+          resetadmin=false
 
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             deploy=true
@@ -72,13 +74,15 @@ jobs:
             case "$subject" in *"[seed]"*) seed=true ;; esac
             case "$subject" in *"[inspect]"*) inspect=true ;; esac
             case "$subject" in *"[handler]"*) handler=true ;; esac
+            case "$subject" in *"[reset-admin]"*) resetadmin=true ;; esac
           fi
 
           echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
           echo "seed=$seed" >> "$GITHUB_OUTPUT"
           echo "inspect=$inspect" >> "$GITHUB_OUTPUT"
           echo "handler=$handler" >> "$GITHUB_OUTPUT"
-          echo "decision: deploy=$deploy seed=$seed inspect=$inspect handler=$handler"
+          echo "resetadmin=$resetadmin" >> "$GITHUB_OUTPUT"
+          echo "decision: deploy=$deploy seed=$seed inspect=$inspect handler=$handler reset-admin=$resetadmin"
 
   inspect:
     # Thirty seconds instead of a fifteen-minute deploy, for answering "where did
@@ -216,6 +220,34 @@ jobs:
             echo "::notice::Site is up on httpPlatformHandler: http://$HOST_NAME/login"
           fi
           exit 0
+
+  reset-admin:
+    # The seed prints its password once. Rather than hunt through a CI log for
+    # it, set a new one: this revokes every session and forces a change at the
+    # next sign-in, so the printed value is good for exactly one login.
+    needs: gate
+    if: needs.gate.outputs.resetadmin == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+
+      - name: Reset the super admin password
+        env:
+          DIRECT_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+          POOLED_URL: ${{ secrets.DATABASE_URL }}
+          SUPERADMIN_MOBILE: ${{ vars.SUPERADMIN_MOBILE }}
+          SUPERADMIN_PASSWORD: ${{ secrets.SUPERADMIN_PASSWORD }}
+        run: |
+          # Port 5432 is closed on this host, so the pooler is the working route.
+          export DATABASE_URL="$POOLED_URL"
+          export DIRECT_DATABASE_URL="$POOLED_URL"
+          npm run db:reset-admin
 
   deploy:
     needs: gate

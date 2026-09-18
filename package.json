@@ -19,7 +19,8 @@
     "dev:db:start": "bash scripts/local-db.sh start",
     "dev:db:stop": "bash scripts/local-db.sh stop",
     "package": "bash scripts/package-deploy.sh",
-    "deploy:ftp": "node scripts/ftp-deploy.mjs"
+    "deploy:ftp": "node scripts/ftp-deploy.mjs",
+    "db:reset-admin": "tsx scripts/reset-superadmin.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
