@@ -115,7 +115,8 @@ Keys:
 | `NEXT_PUBLIC_BETA_BANNER` | `"false"` removes the beta banner. This one is baked in at build time, so change it **before** `npm run package`. |
 | `SMS_PROVIDER` | `console` logs OTPs to `logs/`. Switch to `msg91` with the three MSG91 keys when SMS goes live. |
 | `MSG91_REMINDER_TEMPLATE_ID` | A second DLT template, for reminders. Reminders refuse to send over SMS until this is set rather than borrow the OTP template, which the operator never registered for this text. |
-| `CRON_SECRET` | Bearer token for `/api/cron/reminders`. The deploy derives one from `AUTH_SECRET` if the repository secret is unset, so rotating `AUTH_SECRET` changes the reminder URL too. |
+| `CRON_SECRET` | Bearer token for `/api/cron/reminders` and `/api/cron/backup`. The deploy derives one from `AUTH_SECRET` if the repository secret is unset, so rotating `AUTH_SECRET` changes both URLs. |
+| `BACKUP_DIR` | `./App_Data/backups`. Same rules as `UPLOAD_DIR`: writable by the app pool, outside the web root. |
 
 ## 5. Database migrations
 
@@ -190,6 +191,28 @@ What it sends:
 
 While `SMS_PROVIDER` is `console` these are written to `logs/` instead of sent.
 
+### Backups, on the same scheduler
+
+```
+GET  https://task.kriviinfotech.com/api/cron/backup?token=<CRON_SECRET>
+```
+
+There is no `pg_dump` on this host and no shell to run it from, so the app
+writes its own snapshot: every table as JSON into `App_Data/backups/`, which IIS
+does not serve. Add it as a second cron-job.org job, once a week is enough, and
+collect the files over FTP — a backup that only ever lives on the same host is
+not a backup.
+
+- One file per India-local day, `backup-YYYY-MM-DD.json`; a retry the same day
+  overwrites it rather than filling the disk.
+- The seven newest are kept; older ones are removed after the new one is safely
+  written.
+- Tables are discovered from the database, not from a list in the code, so a
+  table added in a later phase is covered without anyone remembering to.
+- Live sessions and one-time codes are left out; they are not worth restoring.
+- It **does** include password hashes, which is what makes it a usable restore.
+  Treat the files as sensitive: they are inside `App_Data` for that reason.
+
 ## 8. SSL
 
 If `https://` fails, enable SSL for the subdomain in the control panel
@@ -203,7 +226,8 @@ turned on.
 `npm run package`, upload, extract, overwrite. To restart the app without a
 re-upload, touch `web.config` in File Manager (any save recycles the process).
 
-**Do not overwrite `App_Data/uploads/`** — that is where the documents live.
+**Do not overwrite `App_Data/uploads/` or `App_Data/backups/`** — that is where
+the documents and the snapshots live.
 The zip contains only an empty `.keep`, so extracting over the top is safe, but
 avoid deleting the folder first.
 
@@ -245,8 +269,8 @@ debugging. Two commit-message markers avoid it:
 ## Known constraints
 
 - **No cron on shared hosting.** Reminders are an API route called by an
-  external scheduler; see section 7. Nothing fires on its own until that job
-  exists.
+  external scheduler, and so are the backups; see section 7. Neither fires on
+  its own until those jobs exist.
 - **One Node process** (`nodeProcessCountPerApplication="1"`). The login rate
   limiter keeps its counters in memory and assumes this. If the host is ever
   configured for multiple processes, that limiter needs to move into Postgres.

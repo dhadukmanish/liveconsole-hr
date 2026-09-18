@@ -80,8 +80,8 @@ else
 fi
 
 # 7. Writable folders the app expects at runtime.
-mkdir -p "$OUT/App_Data/uploads" "$OUT/logs"
-touch "$OUT/App_Data/uploads/.keep" "$OUT/logs/.keep"
+mkdir -p "$OUT/App_Data/uploads" "$OUT/App_Data/backups" "$OUT/logs"
+touch "$OUT/App_Data/uploads/.keep" "$OUT/App_Data/backups/.keep" "$OUT/logs/.keep"
 
 # 8. Drop build-only packages that dependency tracing pulls in but the running
 #    server never loads. Saves roughly a third of the upload over FTP.

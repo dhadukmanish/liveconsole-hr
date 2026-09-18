@@ -362,6 +362,7 @@ jobs:
             printf 'DIRECT_DATABASE_URL="%s"\n' "$DIRECT_DATABASE_URL"
             printf 'AUTH_SECRET="%s"\n' "$AUTH_SECRET"
             printf 'UPLOAD_DIR="./App_Data/uploads"\n'
+            printf 'BACKUP_DIR="./App_Data/backups"\n'
             printf 'SESSION_COOKIE_SECURE="%s"\n' "$SESSION_COOKIE_SECURE"
             printf 'SMS_PROVIDER="%s"\n' "$SMS_PROVIDER"
             printf 'MSG91_AUTH_KEY="%s"\n' "$MSG91_AUTH_KEY"

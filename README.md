@@ -8,8 +8,8 @@ Built so far:
   PDF, settings masters.
 - **Phase 2** — attendance check-in/check-out, leave apply and approval.
 - **Phase 3** — tasks as a Kanban board, with detail and comments.
-- **Phase 4** — phone book, licences with expiry tracking, and daily reminders
-  driven by an external scheduler.
+- **Phase 4** — phone book, licences with expiry tracking, daily reminders and
+  database snapshots, both driven by an external scheduler.
 
 Phase 5 (WhatsApp) is still to come; `BRIEF.md` has the full plan.
 
@@ -70,8 +70,8 @@ prisma/          schema, migrations, seed
 scripts/         local db, icon generation, deploy packaging
 src/app/(auth)/  login
 src/app/(app)/   everything behind a session
-src/app/api/     document streaming, ID card PDF, the reminder cron route
-src/lib/         prisma, rbac, scope, storage, auth, audit, validation, reminders
+src/app/api/     document streaming, ID card PDF, the reminder and backup cron routes
+src/lib/         prisma, rbac, scope, storage, auth, audit, validation, reminders, backup
 messages/        en / hi / gu (identical key sets)
 web.config       IIS configuration for the host
 server.js        entry point when running from source
@@ -101,3 +101,9 @@ server.js        entry point when running from source
 - **A WhatsApp link only appears when the number can really be one.** A landline
   with an STD code is 11 digits, which looks like an international number but
   is not one, so `0281 2345678` gets a call link and no WhatsApp link.
+- **The backup enumerates tables from the database, not from a list.** A
+  snapshot that silently stopped covering a table added in a later phase would
+  be worse than no snapshot, so `/api/cron/backup` reads
+  `information_schema` and dumps what it finds, minus sessions and one-time
+  codes. It includes password hashes — that is what makes it restorable — so the
+  files live in `App_Data`, which IIS does not serve.
