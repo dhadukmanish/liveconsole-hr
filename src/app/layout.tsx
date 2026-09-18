@@ -11,23 +11,31 @@ import "./globals.css";
  * resolves Gujarati glyphs from Mukta Vaani per glyph, keeping one look.
  */
 const mukta = Mukta({
-  subsets: ["latin", "latin-ext", "devanagari"],
-  weight: ["400", "500", "600", "700"],
+  subsets: ["latin", "devanagari"],
+  // Three weights, not five: each extra weight is another file per subset, and
+  // fonts were the whole of this page's Largest Contentful Paint.
+  weight: ["400", "600", "700"],
   variable: "--font-mukta",
   display: "swap",
 });
 
 const muktaVaani = Mukta_Vaani({
-  subsets: ["latin", "gujarati"],
-  weight: ["400", "500", "600", "700"],
+  // Gujarati only — Latin glyphs come from Mukta, which is already loaded.
+  subsets: ["gujarati"],
+  weight: ["400", "600"],
   variable: "--font-mukta-vaani",
   display: "swap",
+  // Not preloaded: it is only needed by Gujarati readers, and preloading it
+  // made every other user pay for glyphs they never render.
+  preload: false,
 });
 
 export const metadata: Metadata = {
   title: "Live Console HR",
   description: "HR console for tasks, attendance, leave and documents.",
   manifest: "/manifest.webmanifest",
+  // A private HR console has no business in a search index.
+  robots: { index: false, follow: false },
   appleWebApp: { capable: true, statusBarStyle: "default", title: "Live Console HR" },
   formatDetection: { telephone: false },
 };

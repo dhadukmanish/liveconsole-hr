@@ -6,6 +6,10 @@
 
 generator client {
   provider = "prisma-client-js"
+  // The host runs Windows but this is built on Linux, so the Windows query
+  // engine has to be fetched at generate time or the app cannot reach the
+  // database once it is uploaded.
+  binaryTargets = ["native", "windows"]
 }
 
 datasource db {

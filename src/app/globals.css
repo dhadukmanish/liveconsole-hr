@@ -15,7 +15,10 @@
   --danger: #e8412c;
   --pending: #fbb03b;
   --success: #1d9e75;
-  --on-brand: #ffffff;
+  /* Text and icons on the brand orange. White on #F7941D is 2.28:1, which fails
+     WCAG AA (4.5:1) and is hard to read outdoors on a phone; the ink colour on
+     the same orange is 6.2:1. The orange itself is unchanged from the brand. */
+  --on-brand: #2c2c2a;
 }
 
 .dark {

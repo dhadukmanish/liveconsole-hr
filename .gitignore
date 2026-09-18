@@ -16,5 +16,6 @@ public/workbox-*.js
 public/workbox-*.js.map
 App_Data/
 deploy-payload/
+deploy-payload.zip
 secrets/
 .pgdata/
