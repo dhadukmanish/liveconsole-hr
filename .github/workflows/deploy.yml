@@ -98,6 +98,14 @@ jobs:
           FTP_REMOTE: ${{ vars.FTP_REMOTE || '/' }}
         run: node scripts/ftp-deploy.mjs --list
 
+      - name: App logs from the host
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_REMOTE: ${{ vars.FTP_REMOTE || '/' }}
+        run: node scripts/ftp-deploy.mjs --logs
+
       - name: What does the site return, over both http and https
         env:
           HOST_NAME: ${{ vars.SITE_HOST || 'task.kriviinfotech.com' }}

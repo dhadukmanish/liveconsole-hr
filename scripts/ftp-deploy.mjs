@@ -16,6 +16,7 @@
  *   --secure          use FTPS (explicit TLS)
  *   --port <n>        control port             (default: 21)
  *   --list            print the remote folder listing and stop
+ *   --logs            print the app's stdout logs from the host and stop
  *   --remove-default-index
  *                     delete the host's placeholder index.html, which IIS
  *                     otherwise serves ahead of the app
@@ -57,6 +58,7 @@ const LOCAL = path.resolve(option("dir", "deploy-payload"));
 const DRY = flag("dry-run");
 const ZIP_ONLY = flag("zip-only");
 const LIST_ONLY = flag("list");
+const LOGS_ONLY = flag("logs");
 const REMOVE_INDEX = flag("remove-default-index");
 
 if (!DRY && (!HOST || !USER || !PASSWORD)) {
@@ -67,7 +69,7 @@ if (!DRY && (!HOST || !USER || !PASSWORD)) {
   process.exit(1);
 }
 
-if (!ZIP_ONLY && !LIST_ONLY && !existsSync(LOCAL)) {
+if (!ZIP_ONLY && !LIST_ONLY && !LOGS_ONLY && !existsSync(LOCAL)) {
   console.error(`${LOCAL} does not exist. Run: npm run package`);
   process.exit(1);
 }
@@ -113,7 +115,53 @@ function connect(client) {
   });
 }
 
+/**
+ * Prints whatever the host captured from the app's stdout. When IIS answers an
+ * empty 500 the handler started Node and Node died; this is where it says why.
+ */
+async function printRemoteLogs(client) {
+  const os = await import("node:os");
+  const { readFileSync, mkdtempSync } = await import("node:fs");
+  const tmp = mkdtempSync(path.join(os.tmpdir(), "hostlogs-"));
+
+  for (const folder of ["logs", "iisnode", "App_Data/logs"]) {
+    const dir = path.posix.join(REMOTE, folder);
+    let entries;
+    try {
+      entries = await client.list(dir);
+    } catch {
+      console.log(`(no ${folder}/ on the host)`);
+      continue;
+    }
+
+    const files = entries.filter((entry) => entry.isFile && entry.size > 0);
+    if (files.length === 0) {
+      console.log(`(${folder}/ exists but is empty)`);
+      continue;
+    }
+
+    // Newest last-modified first; the most recent crash is the interesting one.
+    files.sort((a, b) => (b.modifiedAt?.getTime() ?? 0) - (a.modifiedAt?.getTime() ?? 0));
+
+    for (const file of files.slice(0, 3)) {
+      const local = path.join(tmp, file.name.replace(/[^\w.-]/g, "_"));
+      await client.downloadTo(local, path.posix.join(dir, file.name));
+      const text = readFileSync(local, "utf8");
+      console.log(`\n=== ${folder}/${file.name} (${file.size} bytes) ===`);
+      console.log(text.split(/\r?\n/).slice(-80).join("\n").trim() || "(empty)");
+    }
+  }
+}
+
 async function main() {
+  if (LOGS_ONLY) {
+    const client = new Client(60_000);
+    await connect(client);
+    await printRemoteLogs(client);
+    client.close();
+    return;
+  }
+
   if (LIST_ONLY) {
     // Used on a first deploy to learn where the site actually lives: if the
     // account does not land in the site root, FTP_REMOTE has to say so.
