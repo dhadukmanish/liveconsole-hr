@@ -121,8 +121,8 @@ the site root is readable over HTTP on some configs.
 
 ## 5. Database — the connection string I was given
 
-- Host resolves (`pg8001.site4now.net` → 14.1.20.212), but **raw TCP to 5432/6432
-  is blocked from this cloud session** by the egress policy. So I cannot run
+- The database host resolves, but **raw TCP to 5432/6432 is blocked from this
+  cloud session** by the egress policy. So I cannot run
   `prisma migrate deploy` or seed against the real DB from here. Migrations will
   have to run from the host or from your Windows machine (documented in
   DEPLOY.md), or via a one-time token-protected admin route.
