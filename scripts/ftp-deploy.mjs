@@ -17,6 +17,9 @@
  *   --port <n>        control port             (default: 21)
  *   --list            print the remote folder listing and stop
  *   --logs            print the app's stdout logs from the host and stop
+ *   --put <file> --as <name>
+ *                     upload a single file, for swapping web.config while
+ *                     diagnosing without re-sending 2,200 files
  *   --remove-default-index
  *                     delete the host's placeholder index.html, which IIS
  *                     otherwise serves ahead of the app
@@ -59,6 +62,8 @@ const DRY = flag("dry-run");
 const ZIP_ONLY = flag("zip-only");
 const LIST_ONLY = flag("list");
 const LOGS_ONLY = flag("logs");
+const PUT_FILE = option("put", null);
+const PUT_AS = option("as", null);
 const REMOVE_INDEX = flag("remove-default-index");
 
 if (!DRY && (!HOST || !USER || !PASSWORD)) {
@@ -69,7 +74,7 @@ if (!DRY && (!HOST || !USER || !PASSWORD)) {
   process.exit(1);
 }
 
-if (!ZIP_ONLY && !LIST_ONLY && !LOGS_ONLY && !existsSync(LOCAL)) {
+if (!ZIP_ONLY && !LIST_ONLY && !LOGS_ONLY && !PUT_FILE && !existsSync(LOCAL)) {
   console.error(`${LOCAL} does not exist. Run: npm run package`);
   process.exit(1);
 }
@@ -154,6 +159,16 @@ async function printRemoteLogs(client) {
 }
 
 async function main() {
+  if (PUT_FILE) {
+    const target = PUT_AS ?? path.basename(PUT_FILE);
+    const client = new Client(60_000);
+    await connect(client);
+    await client.uploadFrom(PUT_FILE, path.posix.join(REMOTE, target));
+    client.close();
+    console.log(`uploaded ${PUT_FILE} -> ${path.posix.join(REMOTE, target)}`);
+    return;
+  }
+
   if (LOGS_ONLY) {
     const client = new Client(60_000);
     await connect(client);

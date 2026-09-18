@@ -45,6 +45,7 @@ jobs:
       deploy: ${{ steps.decide.outputs.deploy }}
       seed: ${{ steps.decide.outputs.seed }}
       inspect: ${{ steps.decide.outputs.inspect }}
+      handler: ${{ steps.decide.outputs.handler }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -61,6 +62,7 @@ jobs:
           deploy=false
           seed=false
           inspect=false
+          handler=false
 
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             deploy=true
@@ -69,12 +71,14 @@ jobs:
             case "$subject" in *"[deploy]"*) deploy=true ;; esac
             case "$subject" in *"[seed]"*) seed=true ;; esac
             case "$subject" in *"[inspect]"*) inspect=true ;; esac
+            case "$subject" in *"[handler]"*) handler=true ;; esac
           fi
 
           echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
           echo "seed=$seed" >> "$GITHUB_OUTPUT"
           echo "inspect=$inspect" >> "$GITHUB_OUTPUT"
-          echo "decision: deploy=$deploy seed=$seed inspect=$inspect"
+          echo "handler=$handler" >> "$GITHUB_OUTPUT"
+          echo "decision: deploy=$deploy seed=$seed inspect=$inspect handler=$handler"
 
   inspect:
     # Thirty seconds instead of a fifteen-minute deploy, for answering "where did
@@ -138,6 +142,64 @@ jobs:
 
           echo
           echo "(exit code is forced to 0: this step reports, it does not judge)"
+          exit 0
+
+  handler:
+    # The site answers an empty 500 and the stdout log is empty, so Node was
+    # never started. Swapping only web.config costs seconds, so try each handler
+    # in turn and let IIS show its own error page instead of guessing.
+    needs: gate
+    if: needs.gate.outputs.handler == 'true'
+    runs-on: ubuntu-latest
+    env:
+      FTP_HOST: ${{ secrets.FTP_HOST }}
+      FTP_USER: ${{ secrets.FTP_USER }}
+      FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+      FTP_REMOTE: ${{ vars.FTP_REMOTE || '/' }}
+      HOST_NAME: ${{ vars.SITE_HOST || 'task.kriviinfotech.com' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+
+      - name: Try each handler and report what IIS says
+        run: |
+          set +e
+
+          probe () {
+            label="$1"
+            echo
+            echo "======================================================"
+            echo "  $label"
+            echo "======================================================"
+            sleep 8
+            for path in / /login; do
+              url="http://$HOST_NAME$path"
+              code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "$url")
+              echo "$url -> HTTP ${code:-no-response}"
+            done
+            echo "--- error page text ---"
+            curl -sS --max-time 30 "http://$HOST_NAME/login" 2>&1 \
+              | sed -e 's/<[^>]*>/ /g' -e 's/  */ /g' \
+              | grep -v '^ *$' | head -25
+            echo "--- captured logs ---"
+            node scripts/ftp-deploy.mjs --logs 2>&1 | head -40
+          }
+
+          echo "Uploading variant A: httpPlatformHandler, IIS error pages visible"
+          node scripts/ftp-deploy.mjs --put deploy-variants/web.config.httpplatform-debug --as web.config
+          probe "A: httpPlatformHandler"
+
+          echo
+          echo "Uploading variant B: iisnode"
+          node scripts/ftp-deploy.mjs --put deploy-variants/web.config.iisnode --as web.config
+          probe "B: iisnode"
+
+          echo
+          echo "Both variants tried. The site is currently running variant B."
           exit 0
 
   deploy:
