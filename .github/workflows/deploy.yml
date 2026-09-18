@@ -102,21 +102,35 @@ jobs:
         env:
           HOST_NAME: ${{ vars.SITE_HOST || 'task.kriviinfotech.com' }}
         run: |
-          for scheme in http https; do
-            for path in / /login; do
-              url="$scheme://$HOST_NAME$path"
-              out=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "$url" 2>&1)
-              rc=$?
-              if [ "$rc" -ne 0 ]; then
-                echo "$url -> curl failed (exit $rc): $(curl -s -S -o /dev/null --max-time 30 "$url" 2>&1 | head -1)"
-              else
-                echo "$url -> HTTP $out"
-              fi
-            done
+          # No -e here: a failing curl is a result to report, not a reason to
+          # stop before printing the diagnosis.
+          set +e
+
+          for url in "http://$HOST_NAME/login" "https://$HOST_NAME/login"; do
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "$url")
+            rc=$?
+            if [ "$rc" -ne 0 ]; then
+              echo "$url -> curl exit $rc: $(curl -sS -o /dev/null --max-time 30 "$url" 2>&1 | head -1)"
+            else
+              echo "$url -> HTTP $code"
+            fi
           done
+
           echo
-          echo "Response headers for http://$HOST_NAME/login:"
-          curl -s -I --max-time 30 "http://$HOST_NAME/login" 2>&1 | head -12 || true
+          echo "=== headers: http://$HOST_NAME/login ==="
+          curl -sS -I --max-time 30 "http://$HOST_NAME/login" 2>&1 | head -15
+
+          echo
+          echo "=== body: http://$HOST_NAME/login ==="
+          # IIS puts the sub-status (500.19 and friends) in the page body, which
+          # is the difference between "module missing" and "app crashed".
+          curl -sS --max-time 30 "http://$HOST_NAME/login" 2>&1 \
+            | sed -e 's/<[^>]*>/ /g' -e 's/  */ /g' \
+            | grep -v '^ *$' | head -30
+
+          echo
+          echo "(exit code is forced to 0: this step reports, it does not judge)"
+          exit 0
 
   deploy:
     needs: gate
