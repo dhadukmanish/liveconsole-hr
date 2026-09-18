@@ -27,6 +27,16 @@ const eslintConfig = [
     ],
   },
   {
+    // useActionState hands every action a previous-state and a FormData whether
+    // it needs them or not; an underscore prefix is the usual way to say so.
+    rules: {
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        { argsIgnorePattern: "^_", varsIgnorePattern: "^_", caughtErrorsIgnorePattern: "^_" },
+      ],
+    },
+  },
+  {
     // server.js is the IIS entry point and must stay CommonJS: httpPlatformHandler
     // launches it with plain `node server.js`, outside any bundler.
     files: ["server.js"],

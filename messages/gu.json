@@ -202,5 +202,63 @@
     "LICENSES": "લાઇસન્સ",
     "USERS": "વપરાશકર્તા",
     "SETTINGS": "સેટિંગ્સ"
+  },
+  "attendance": {
+    "checkIn": "ચેક ઇન",
+    "checkOut": "ચેક આઉટ",
+    "checkedIn": "ચેક ઇન થયું",
+    "checkedOut": "ચેક આઉટ થયું",
+    "alreadyCheckedIn": "આજે તમે પહેલેથી ચેક ઇન કરી ચૂક્યા છો",
+    "alreadyCheckedOut": "આજે તમે પહેલેથી ચેક આઉટ કરી ચૂક્યા છો",
+    "notCheckedIn": "પહેલાં ચેક ઇન કરો",
+    "checkedInAt": "{time} વાગ્યે ચેક ઇન",
+    "dayComplete": "દિવસ પૂરો",
+    "thisMonth": "આ મહિને",
+    "teamToday": "આજની ટીમ",
+    "presentCount": "{total} માંથી {count} હાજર",
+    "notIn": "આવ્યા નથી",
+    "noRecords": "હજી કોઈ હાજરી નથી",
+    "viewOnly": "તમે હાજરી જોઈ શકો છો, નોંધી શકતા નથી",
+    "status": {
+      "PRESENT": "હાજર",
+      "HALF_DAY": "અડધો દિવસ",
+      "ON_LEAVE": "રજા પર",
+      "ABSENT": "ગેરહાજર"
+    }
+  },
+  "leave": {
+    "apply": "રજા માટે અરજી",
+    "type": "રજાનો પ્રકાર",
+    "pickType": "રજાનો પ્રકાર પસંદ કરો",
+    "from": "થી",
+    "to": "સુધી",
+    "halfDay": "અડધો દિવસ",
+    "reason": "કારણ",
+    "applied": "રજાની અરજી મોકલી",
+    "myRequests": "મારી અરજીઓ",
+    "noRequests": "હજી કોઈ અરજી નથી",
+    "balance": "આ વર્ષની બાકી",
+    "usedOf": "{total} માંથી {used} વાપરી",
+    "noAnnualLimit": "વાર્ષિક મર્યાદા નથી",
+    "dayCount": "{days} દિવસ",
+    "cancel": "અરજી રદ કરો",
+    "approve": "મંજૂર કરો",
+    "reject": "નામંજૂર કરો",
+    "decisionNote": "નોંધ (વૈકલ્પિક)",
+    "approved": "રજા મંજૂર",
+    "rejected": "રજા નામંજૂર",
+    "awaitingYou": "તમારી મંજૂરી બાકી ({count})",
+    "noApprovalNeeded": "મંજૂરીની જરૂર નથી",
+    "endBeforeStart": "છેલ્લી તારીખ શરૂઆતની તારીખ પહેલાં છે",
+    "overlaps": "આ તારીખોમાં તમારી રજા પહેલેથી છે",
+    "reasonTooShort": "ઓછામાં ઓછા 5 અક્ષરનું કારણ લખો",
+    "alreadyDecided": "આ અરજી પર નિર્ણય થઈ ચૂક્યો છે",
+    "cannotDecideOwn": "તમે તમારી પોતાની રજા મંજૂર કરી શકતા નથી",
+    "status": {
+      "PENDING": "બાકી",
+      "APPROVED": "મંજૂર",
+      "REJECTED": "નામંજૂર",
+      "CANCELLED": "રદ"
+    }
   }
 }

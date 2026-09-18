@@ -202,5 +202,63 @@
     "LICENSES": "लाइसेंस",
     "USERS": "उपयोगकर्ता",
     "SETTINGS": "सेटिंग्स"
+  },
+  "attendance": {
+    "checkIn": "चेक इन",
+    "checkOut": "चेक आउट",
+    "checkedIn": "चेक इन हो गया",
+    "checkedOut": "चेक आउट हो गया",
+    "alreadyCheckedIn": "आज आप पहले ही चेक इन कर चुके हैं",
+    "alreadyCheckedOut": "आज आप पहले ही चेक आउट कर चुके हैं",
+    "notCheckedIn": "पहले चेक इन करें",
+    "checkedInAt": "{time} बजे चेक इन",
+    "dayComplete": "दिन पूरा हुआ",
+    "thisMonth": "इस महीने",
+    "teamToday": "आज की टीम",
+    "presentCount": "{total} में से {count} उपस्थित",
+    "notIn": "नहीं आए",
+    "noRecords": "अभी कोई उपस्थिति नहीं",
+    "viewOnly": "आप उपस्थिति देख सकते हैं, दर्ज नहीं कर सकते",
+    "status": {
+      "PRESENT": "उपस्थित",
+      "HALF_DAY": "आधा दिन",
+      "ON_LEAVE": "छुट्टी पर",
+      "ABSENT": "अनुपस्थित"
+    }
+  },
+  "leave": {
+    "apply": "छुट्टी के लिए आवेदन",
+    "type": "छुट्टी का प्रकार",
+    "pickType": "छुट्टी का प्रकार चुनें",
+    "from": "से",
+    "to": "तक",
+    "halfDay": "आधा दिन",
+    "reason": "कारण",
+    "applied": "छुट्टी का आवेदन भेज दिया",
+    "myRequests": "मेरे आवेदन",
+    "noRequests": "अभी कोई आवेदन नहीं",
+    "balance": "इस साल का शेष",
+    "usedOf": "{total} में से {used} ली",
+    "noAnnualLimit": "सालाना सीमा नहीं",
+    "dayCount": "{days} दिन",
+    "cancel": "आवेदन रद्द करें",
+    "approve": "स्वीकार करें",
+    "reject": "अस्वीकार करें",
+    "decisionNote": "टिप्पणी (वैकल्पिक)",
+    "approved": "छुट्टी स्वीकृत",
+    "rejected": "छुट्टी अस्वीकृत",
+    "awaitingYou": "आपकी स्वीकृति बाकी ({count})",
+    "noApprovalNeeded": "स्वीकृति की ज़रूरत नहीं",
+    "endBeforeStart": "अंतिम तारीख़ शुरुआती तारीख़ से पहले है",
+    "overlaps": "इन तारीख़ों पर आपकी छुट्टी पहले से है",
+    "reasonTooShort": "कम से कम 5 अक्षर का कारण लिखें",
+    "alreadyDecided": "इस आवेदन पर निर्णय हो चुका है",
+    "cannotDecideOwn": "आप अपनी छुट्टी ख़ुद स्वीकृत नहीं कर सकते",
+    "status": {
+      "PENDING": "लंबित",
+      "APPROVED": "स्वीकृत",
+      "REJECTED": "अस्वीकृत",
+      "CANCELLED": "रद्द"
+    }
   }
 }

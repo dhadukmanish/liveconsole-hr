@@ -166,6 +166,13 @@ export async function loginAction(
   prev: LoginState,
   formData: FormData,
 ): Promise<LoginState> {
+  // Checked before `intent`: the resend button lives inside the OTP-step form,
+  // whose hidden intent field would otherwise win and turn a resend into a
+  // verify with an empty code.
+  if (formData.get("resend") !== null) {
+    return startLogin(prev, formData);
+  }
+
   const intent = String(formData.get("intent") ?? "start");
   if (intent === "password") return loginWithPassword(prev, formData);
   if (intent === "otp") return loginWithOtp(prev, formData);

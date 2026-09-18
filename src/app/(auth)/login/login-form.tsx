@@ -95,8 +95,12 @@ export function LoginForm() {
       {step === "otp" ? (
         <Button
           type="submit"
-          name="intent"
-          value="start"
+          name="resend"
+          value="1"
+          // Without this the browser blocks the submit: the OTP field is
+          // required and empty, so asking for a new code never reaches the
+          // server.
+          formNoValidate
           variant="link"
           className="mx-auto mt-3 block"
           disabled={pending}

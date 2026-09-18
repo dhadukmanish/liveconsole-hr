@@ -202,5 +202,63 @@
     "LICENSES": "Licenses",
     "USERS": "Users",
     "SETTINGS": "Settings"
+  },
+  "attendance": {
+    "checkIn": "Check in",
+    "checkOut": "Check out",
+    "checkedIn": "Checked in",
+    "checkedOut": "Checked out",
+    "alreadyCheckedIn": "You are already checked in today",
+    "alreadyCheckedOut": "You have already checked out today",
+    "notCheckedIn": "Check in first",
+    "checkedInAt": "Checked in at {time}",
+    "dayComplete": "Day complete",
+    "thisMonth": "This month",
+    "teamToday": "Team today",
+    "presentCount": "{count} of {total} in",
+    "notIn": "Not in",
+    "noRecords": "No attendance yet",
+    "viewOnly": "You can view attendance but not mark it",
+    "status": {
+      "PRESENT": "Present",
+      "HALF_DAY": "Half day",
+      "ON_LEAVE": "On leave",
+      "ABSENT": "Absent"
+    }
+  },
+  "leave": {
+    "apply": "Apply for leave",
+    "type": "Leave type",
+    "pickType": "Choose a leave type",
+    "from": "From",
+    "to": "To",
+    "halfDay": "Half day",
+    "reason": "Reason",
+    "applied": "Leave request sent",
+    "myRequests": "My requests",
+    "noRequests": "No leave requests yet",
+    "balance": "Balance this year",
+    "usedOf": "{used} of {total} used",
+    "noAnnualLimit": "No yearly limit",
+    "dayCount": "{days} day(s)",
+    "cancel": "Cancel request",
+    "approve": "Approve",
+    "reject": "Reject",
+    "decisionNote": "Note (optional)",
+    "approved": "Leave approved",
+    "rejected": "Leave rejected",
+    "awaitingYou": "Waiting for your approval ({count})",
+    "noApprovalNeeded": "no approval needed",
+    "endBeforeStart": "The end date is before the start date",
+    "overlaps": "You already have leave covering those dates",
+    "reasonTooShort": "Give a reason of at least 5 characters",
+    "alreadyDecided": "That request has already been decided",
+    "cannotDecideOwn": "You cannot approve your own leave",
+    "status": {
+      "PENDING": "Pending",
+      "APPROVED": "Approved",
+      "REJECTED": "Rejected",
+      "CANCELLED": "Cancelled"
+    }
   }
 }

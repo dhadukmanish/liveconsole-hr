@@ -4,6 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardMuted, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/page";
+import { CheckInCard } from "@/components/check-in-card";
+import { todayAttendance } from "@/app/(app)/attendance/actions";
+import { formatIstTime, minutesToHours } from "@/lib/workday";
 import { requireUser } from "@/lib/auth/guard";
 import { can } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
@@ -20,6 +23,7 @@ export default async function HomePage() {
   const t = await getTranslations();
 
   const scope = await visibleUserIds(user);
+  const attendanceToday = can(user, "ATTENDANCE", "ADD") ? await todayAttendance(user.id) : null;
   const [peopleCount, myDocuments] = await Promise.all([
     prisma.user.count({
       where: scope === "ALL" ? {} : { id: { in: scope } },
@@ -42,14 +46,26 @@ export default async function HomePage() {
         </p>
       </header>
 
-      {/* The one big primary action on this screen — inert until Phase 2. */}
+      {/* The one big primary action on this screen. */}
       <Card className="mb-4">
-        <Button size="lg" disabled aria-describedby="checkin-note">
-          {t("home.checkIn")}
-        </Button>
-        <CardMuted id="checkin-note" className="mt-2 text-center">
-          {t("home.checkInDisabled")}
-        </CardMuted>
+        {can(user, "ATTENDANCE", "ADD") ? (
+          <CheckInCard
+            checkedInAt={attendanceToday?.checkInAt ? formatIstTime(attendanceToday.checkInAt) : null}
+            checkedOutAt={attendanceToday?.checkOutAt ? formatIstTime(attendanceToday.checkOutAt) : null}
+            workedLabel={
+              attendanceToday?.workedMinutes ? minutesToHours(attendanceToday.workedMinutes) : null
+            }
+          />
+        ) : (
+          <>
+            <Button size="lg" disabled aria-describedby="checkin-note">
+              {t("home.checkIn")}
+            </Button>
+            <CardMuted id="checkin-note" className="mt-2 text-center">
+              {t("attendance.viewOnly")}
+            </CardMuted>
+          </>
+        )}
       </Card>
 
       <section className="mb-4">

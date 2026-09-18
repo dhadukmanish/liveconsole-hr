@@ -5,7 +5,7 @@
 // direct 5432 connection while the app runtime uses the pooled one.
 
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
   // The host runs Windows but this is built on Linux, so the Windows query
   // engine has to be fetched at generate time or the app cannot reach the
   // database once it is uploaded.
@@ -143,6 +143,11 @@ model User {
   sessions          Session[]
   auditLogs         AuditLog[]
 
+  attendance         Attendance[]   @relation("AttendanceOwner")
+  attendanceRecorded Attendance[]   @relation("AttendanceRecorder")
+  leaveRequests      LeaveRequest[] @relation("LeaveOwner")
+  leaveDecisions     LeaveRequest[] @relation("LeaveApprover")
+
   @@index([managerId])
   @@index([roleId])
   @@index([status])
@@ -270,16 +275,17 @@ model AuditLog {
 // ---------------------------------------------------------------------------
 
 model LeaveType {
-  id               String   @id @default(cuid())
-  code             String   @unique
+  id               String         @id @default(cuid())
+  code             String         @unique
   name             String
-  isPaid           Boolean  @default(true)
+  isPaid           Boolean        @default(true)
   annualDays       Int?
-  requiresApproval Boolean  @default(true)
-  isActive         Boolean  @default(true)
-  sortOrder        Int      @default(0)
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  requiresApproval Boolean        @default(true)
+  isActive         Boolean        @default(true)
+  sortOrder        Int            @default(0)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  requests         LeaveRequest[]
 
   @@map("leave_types")
 }
@@ -321,4 +327,74 @@ model TaskStatus {
   updatedAt  DateTime @updatedAt
 
   @@map("task_statuses")
+}
+
+// ---------------------------------------------------------------------------
+// Phase 2 — attendance and leave
+// ---------------------------------------------------------------------------
+
+enum AttendanceStatus {
+  PRESENT
+  HALF_DAY
+  ON_LEAVE
+  ABSENT
+}
+
+/// One row per person per working day. `workDate` is the day in India, not UTC:
+/// a 9pm IST check-in is still that day's attendance, and the host runs in UTC.
+model Attendance {
+  id            String           @id @default(cuid())
+  userId        String
+  workDate      DateTime         @db.Date
+  checkInAt     DateTime?
+  checkOutAt    DateTime?
+  status        AttendanceStatus @default(PRESENT)
+  /// Minutes between check-in and check-out, stored so reports do not have to
+  /// recompute it and so a later edit cannot silently change history.
+  workedMinutes Int?
+  note          String?
+  /// Who recorded it, when an admin marks attendance on someone's behalf.
+  recordedById  String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+
+  user       User  @relation("AttendanceOwner", fields: [userId], references: [id], onDelete: Cascade)
+  recordedBy User? @relation("AttendanceRecorder", fields: [recordedById], references: [id], onDelete: SetNull)
+
+  @@unique([userId, workDate])
+  @@index([workDate])
+  @@map("attendance")
+}
+
+enum LeaveStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+model LeaveRequest {
+  id           String      @id @default(cuid())
+  userId       String
+  leaveTypeId  String
+  startDate    DateTime    @db.Date
+  endDate      DateTime    @db.Date
+  /// Half days are common enough here to be worth storing rather than deriving.
+  isHalfDay    Boolean     @default(false)
+  days         Float
+  reason       String
+  status       LeaveStatus @default(PENDING)
+  decidedById  String?
+  decidedAt    DateTime?
+  decisionNote String?
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  user      User      @relation("LeaveOwner", fields: [userId], references: [id], onDelete: Cascade)
+  leaveType LeaveType @relation(fields: [leaveTypeId], references: [id])
+  decidedBy User?     @relation("LeaveApprover", fields: [decidedById], references: [id], onDelete: SetNull)
+
+  @@index([userId, startDate])
+  @@index([status])
+  @@map("leave_requests")
 }
