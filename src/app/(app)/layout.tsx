@@ -11,8 +11,8 @@ export default async function AppLayout({
   const user = await requireUser();
   const t = await getTranslations();
 
-  // Bottom bar stays at five items per the design; Task/Attendance/Leave are
-  // Phase 2-3 placeholders but their tabs are permission-gated from day one.
+  // Bottom bar stays at five items per the design, so anything beyond the four
+  // core modules lives in the sidebar and under More.
   const tabs: NavItem[] = [
     { href: "/home", labelKey: "nav.home", icon: "home" },
     ...(can(user, "TASK", "VIEW")
@@ -30,6 +30,12 @@ export default async function AppLayout({
   const sidebarExtras: NavItem[] = [
     ...(can(user, "DOCUMENTS", "VIEW")
       ? [{ href: "/documents", labelKey: "nav.documents", icon: "documents" as const }]
+      : []),
+    ...(can(user, "PHONEBOOK", "VIEW")
+      ? [{ href: "/phonebook", labelKey: "nav.phonebook", icon: "phonebook" as const }]
+      : []),
+    ...(can(user, "LICENSES", "VIEW")
+      ? [{ href: "/licenses", labelKey: "nav.licenses", icon: "licenses" as const }]
       : []),
     ...(can(user, "USERS", "VIEW")
       ? [{ href: "/users", labelKey: "nav.users", icon: "users" as const }]

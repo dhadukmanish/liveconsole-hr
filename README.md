@@ -1,8 +1,17 @@
 # Live Console HR
 
 HR console for Krivi Infotech — tasks, attendance, leave, documents and people.
-Phase 1 (login, users, permissions, documents, ID card, settings masters) is
-built; Phases 2-5 are listed in `BRIEF.md`.
+
+Built so far:
+
+- **Phase 1** — login (OTP or password), users, permissions, documents, ID card
+  PDF, settings masters.
+- **Phase 2** — attendance check-in/check-out, leave apply and approval.
+- **Phase 3** — tasks as a Kanban board, with detail and comments.
+- **Phase 4** — phone book, licences with expiry tracking, and daily reminders
+  driven by an external scheduler.
+
+Phase 5 (WhatsApp) is still to come; `BRIEF.md` has the full plan.
 
 - **Stack** — Next.js 15.5 (App Router, TypeScript, `src/`), Tailwind v4,
   Prisma 6 + PostgreSQL, next-intl (en / hi / gu), PWA via `@ducanh2912/next-pwa`.
@@ -61,8 +70,8 @@ prisma/          schema, migrations, seed
 scripts/         local db, icon generation, deploy packaging
 src/app/(auth)/  login
 src/app/(app)/   everything behind a session
-src/app/api/     document streaming, ID card PDF
-src/lib/         prisma, rbac, scope, storage, auth, audit, validation
+src/app/api/     document streaming, ID card PDF, the reminder cron route
+src/lib/         prisma, rbac, scope, storage, auth, audit, validation, reminders
 messages/        en / hi / gu (identical key sets)
 web.config       IIS configuration for the host
 server.js        entry point when running from source
@@ -80,3 +89,15 @@ server.js        entry point when running from source
 - **Text on the brand orange is the ink colour, not white.** White on `#F7941D`
   is 2.28:1 and fails WCAG AA; the ink colour on the same orange is 6.2:1. The
   orange is unchanged.
+- **Reminders are idempotent, not scheduled.** Shared hosting has no cron, so
+  `/api/cron/reminders` is called by an external scheduler. Schedulers retry, so
+  every send is recorded against (kind, record, India-local day, recipient) and
+  the second call in a day sends nothing. A failed send is deliberately *not*
+  recorded, so it is retried on the next run.
+- **Reminders use a different SMS template from OTPs.** An Indian provider
+  routes the two through separate DLT-registered templates; a reminder pushed
+  through the OTP template is rejected or mangled. `sendText` refuses rather
+  than borrow the OTP template.
+- **A WhatsApp link only appears when the number can really be one.** A landline
+  with an STD code is 11 digits, which looks like an international number but
+  is not one, so `0281 2345678` gets a call link and no WhatsApp link.

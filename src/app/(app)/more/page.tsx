@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ChevronRight, FileText, IdCard, KeyRound, UserCircle } from "lucide-react";
+import { BookUser, ChevronRight, FileText, IdCard, KeyRound, ScrollText, UserCircle } from "lucide-react";
 import { Card, CardMuted, CardTitle } from "@/components/ui/card";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { PageHeader } from "@/components/ui/page";
@@ -8,6 +8,7 @@ import { SignOutButton } from "@/components/sign-out-button";
 import { ThemeSwitcher } from "@/components/theme-switcher";
 import { initials } from "@/lib/utils";
 import { requireUser } from "@/lib/auth/guard";
+import { can } from "@/lib/auth/session";
 
 const ROW =
   "flex min-h-14 items-center gap-3 border-b border-hairline px-1 text-sm font-semibold text-ink last:border-0";
@@ -20,6 +21,13 @@ export default async function MorePage() {
     { href: "/more/profile", label: t("more.profile"), icon: UserCircle },
     { href: "/id-card", label: t("more.idCard"), icon: IdCard },
     { href: "/documents/me", label: t("more.documents"), icon: FileText },
+    // The bottom bar is full at five tabs, so these two reach their screens here.
+    ...(can(user, "PHONEBOOK", "VIEW")
+      ? [{ href: "/phonebook", label: t("nav.phonebook"), icon: BookUser }]
+      : []),
+    ...(can(user, "LICENSES", "VIEW")
+      ? [{ href: "/licenses", label: t("nav.licenses"), icon: ScrollText }]
+      : []),
     ...(user.loginMethod === "PASSWORD"
       ? [{ href: "/more/change-password", label: t("auth.changePassword"), icon: KeyRound }]
       : []),

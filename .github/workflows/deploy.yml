@@ -13,6 +13,12 @@ name: Deploy to site4now
 # Add [seed] to the commit message as well to create the roles, permissions,
 # masters and the first SUPERADMIN. Seeding is idempotent, but it is opt-in so
 # an ordinary deploy never touches account data.
+#
+# Other subject markers, none of which deploy anything:
+#   [inspect]      list what is on the host and what the site returns
+#   [handler]      swap the IIS handler between httpPlatformHandler and iisnode
+#   [reset-admin]  reset the SUPERADMIN password from the repository secret
+#   [cron-url]     print the daily reminder URL into the run summary
 
 on:
   push:
@@ -47,6 +53,7 @@ jobs:
       inspect: ${{ steps.decide.outputs.inspect }}
       handler: ${{ steps.decide.outputs.handler }}
       resetadmin: ${{ steps.decide.outputs.resetadmin }}
+      cronurl: ${{ steps.decide.outputs.cronurl }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -65,6 +72,7 @@ jobs:
           inspect=false
           handler=false
           resetadmin=false
+          cronurl=false
 
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
             deploy=true
@@ -75,6 +83,7 @@ jobs:
             case "$subject" in *"[inspect]"*) inspect=true ;; esac
             case "$subject" in *"[handler]"*) handler=true ;; esac
             case "$subject" in *"[reset-admin]"*) resetadmin=true ;; esac
+            case "$subject" in *"[cron-url]"*) cronurl=true ;; esac
           fi
 
           echo "deploy=$deploy" >> "$GITHUB_OUTPUT"
@@ -82,7 +91,8 @@ jobs:
           echo "inspect=$inspect" >> "$GITHUB_OUTPUT"
           echo "handler=$handler" >> "$GITHUB_OUTPUT"
           echo "resetadmin=$resetadmin" >> "$GITHUB_OUTPUT"
-          echo "decision: deploy=$deploy seed=$seed inspect=$inspect handler=$handler reset-admin=$resetadmin"
+          echo "cronurl=$cronurl" >> "$GITHUB_OUTPUT"
+          echo "decision: deploy=$deploy seed=$seed inspect=$inspect handler=$handler reset-admin=$resetadmin cron-url=$cronurl"
 
   inspect:
     # Thirty seconds instead of a fifteen-minute deploy, for answering "where did
@@ -249,6 +259,36 @@ jobs:
           export DIRECT_DATABASE_URL="$POOLED_URL"
           npm run db:reset-admin
 
+  cron-url:
+    # Prints the reminder URL to paste into cron-job.org. It carries the bearer
+    # token, so it goes into this run's summary (visible to people who can see
+    # the repository) rather than anywhere more public.
+    needs: gate
+    if: needs.gate.outputs.cronurl == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build the URL
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          AUTH_SECRET: ${{ secrets.AUTH_SECRET }}
+          SITE_URL: ${{ vars.SITE_URL || 'http://task.kriviinfotech.com' }}
+        run: |
+          token=$(bash scripts/cron-token.sh)
+          {
+            echo "### Daily reminder URL"
+            echo
+            echo "Schedule this once a day at cron-job.org (method GET):"
+            echo
+            echo '```'
+            echo "$SITE_URL/api/cron/reminders?token=$token"
+            echo '```'
+            echo
+            echo "It is safe to call more than once a day: the second call the"
+            echo "same day sends nothing."
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "URL written to the run summary."
+
   deploy:
     needs: gate
     if: needs.gate.outputs.deploy == 'true'
@@ -307,9 +347,16 @@ jobs:
           MSG91_AUTH_KEY: ${{ secrets.MSG91_AUTH_KEY }}
           MSG91_SENDER_ID: ${{ secrets.MSG91_SENDER_ID }}
           MSG91_TEMPLATE_ID: ${{ secrets.MSG91_TEMPLATE_ID }}
+          MSG91_REMINDER_TEMPLATE_ID: ${{ secrets.MSG91_REMINDER_TEMPLATE_ID }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           # Written with printf from the environment so no secret is ever echoed
           # into the log. GitHub masks secrets, but not printing them is better.
+
+          # The reminder endpoint is a public URL guarded only by this token. With
+          # no CRON_SECRET set it is derived from AUTH_SECRET so the feature is
+          # not silently dead; rotating AUTH_SECRET therefore changes the cron
+          # URL too. Push a commit marked [cron-url] to read the current one.
           {
             printf 'DATABASE_URL="%s"\n' "$DATABASE_URL"
             printf 'DIRECT_DATABASE_URL="%s"\n' "$DIRECT_DATABASE_URL"
@@ -320,6 +367,8 @@ jobs:
             printf 'MSG91_AUTH_KEY="%s"\n' "$MSG91_AUTH_KEY"
             printf 'MSG91_SENDER_ID="%s"\n' "$MSG91_SENDER_ID"
             printf 'MSG91_TEMPLATE_ID="%s"\n' "$MSG91_TEMPLATE_ID"
+            printf 'MSG91_REMINDER_TEMPLATE_ID="%s"\n' "$MSG91_REMINDER_TEMPLATE_ID"
+            printf 'CRON_SECRET="%s"\n' "$(bash scripts/cron-token.sh)"
           } > deploy-payload/.env
           chmod 600 deploy-payload/.env
           echo "Wrote deploy-payload/.env ($(wc -l < deploy-payload/.env) lines)"

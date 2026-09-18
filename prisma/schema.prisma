@@ -143,6 +143,9 @@ model User {
   sessions          Session[]
   auditLogs         AuditLog[]
 
+  contactsCreated    Contact[]      @relation("ContactCreator")
+  licensesOwned      License[]      @relation("LicenseOwner")
+  licensesCreated    License[]      @relation("LicenseCreator")
   tasksAssigned      Task[]         @relation("TaskAssignee")
   tasksCreated       Task[]         @relation("TaskCreator")
   attendance         Attendance[]   @relation("AttendanceOwner")
@@ -439,4 +442,82 @@ model Task {
   @@index([taskStatusId])
   @@index([dueDate])
   @@map("tasks")
+}
+
+// ---------------------------------------------------------------------------
+// Phase 4 — phone book, licenses and reminders
+// ---------------------------------------------------------------------------
+
+model Contact {
+  id          String   @id @default(cuid())
+  name        String
+  company     String?
+  designation String?
+  phone       String
+  altPhone    String?
+  email       String?
+  /// Free text rather than a master: the list of categories a company uses
+  /// changes constantly, and existing values are offered as suggestions.
+  category    String?
+  address     String?
+  notes       String?
+  isActive    Boolean  @default(true)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  createdBy User? @relation("ContactCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([name])
+  @@index([category])
+  @@map("contacts")
+}
+
+model License {
+  id               String    @id @default(cuid())
+  name             String
+  vendor           String?
+  licenseNumber    String?
+  startDate        DateTime? @db.Date
+  expiryDate       DateTime  @db.Date
+  cost             Float?
+  ownerId          String?
+  /// How many days before expiry the reminder should start. Per record,
+  /// because a domain and an insurance policy do not need the same notice.
+  remindDaysBefore Int       @default(30)
+  notes            String?
+  isActive         Boolean   @default(true)
+  createdById      String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  owner     User? @relation("LicenseOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  createdBy User? @relation("LicenseCreator", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@index([expiryDate])
+  @@map("licenses")
+}
+
+enum ReminderKind {
+  LICENSE_EXPIRY
+  LEAVE_PENDING
+}
+
+/// One row per thing reminded about per day. The unique key is what makes the
+/// cron endpoint safe to call repeatedly: cron-job.org retries, and nobody
+/// wants four texts about the same licence.
+model ReminderLog {
+  id        String       @id @default(cuid())
+  kind      ReminderKind
+  entityId  String
+  /// The India-local date the reminder was sent for, as YYYY-MM-DD.
+  dayKey    String
+  recipient String
+  channel   String
+  detail    String?
+  createdAt DateTime     @default(now())
+
+  @@unique([kind, entityId, dayKey, recipient])
+  @@index([createdAt])
+  @@map("reminder_logs")
 }

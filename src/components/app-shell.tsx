@@ -4,10 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
+  BookUser,
   CalendarCheck,
   ClipboardList,
   FileText,
   Home,
+  KeyRound,
   MoreHorizontal,
   Settings,
   ShieldCheck,
@@ -30,6 +32,8 @@ const ICONS = {
   users: Users,
   permissions: ShieldCheck,
   documents: FileText,
+  phonebook: BookUser,
+  licenses: KeyRound,
   settings: Settings,
 } as const;
 
