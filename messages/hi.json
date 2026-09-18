@@ -260,5 +260,29 @@
       "REJECTED": "अस्वीकृत",
       "CANCELLED": "रद्द"
     }
+  },
+  "tasks": {
+    "new": "नया कार्य",
+    "title": "शीर्षक",
+    "description": "विवरण",
+    "assignee": "किसे सौंपा",
+    "unassigned": "किसी को नहीं",
+    "due": "अंतिम तिथि",
+    "type": "प्रकार",
+    "priority": "प्राथमिकता",
+    "status": "स्थिति",
+    "all": "सभी कार्य",
+    "mine": "मेरे",
+    "count": "{count} कार्य",
+    "none": "अभी कोई कार्य नहीं",
+    "noneAssigned": "आपको कोई कार्य नहीं सौंपा गया",
+    "emptyColumn": "कुछ नहीं",
+    "overdue": "समय बीत गया",
+    "moveTo": "यहाँ ले जाएँ",
+    "saved": "कार्य सेव हुआ",
+    "delete": "कार्य हटाएँ",
+    "raisedBy": "{name} ने बनाया",
+    "noDescription": "कोई विवरण नहीं",
+    "titleTooShort": "कम से कम 3 अक्षर का शीर्षक लिखें"
   }
 }

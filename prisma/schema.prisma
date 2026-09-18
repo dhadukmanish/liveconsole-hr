@@ -143,6 +143,8 @@ model User {
   sessions          Session[]
   auditLogs         AuditLog[]
 
+  tasksAssigned      Task[]         @relation("TaskAssignee")
+  tasksCreated       Task[]         @relation("TaskCreator")
   attendance         Attendance[]   @relation("AttendanceOwner")
   attendanceRecorded Attendance[]   @relation("AttendanceRecorder")
   leaveRequests      LeaveRequest[] @relation("LeaveOwner")
@@ -299,6 +301,8 @@ model TaskType {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  tasks Task[]
+
   @@map("task_types")
 }
 
@@ -311,6 +315,8 @@ model TaskPriority {
   sortOrder Int      @default(0)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  tasks Task[]
 
   @@map("task_priorities")
 }
@@ -325,6 +331,8 @@ model TaskStatus {
   sortOrder  Int      @default(0)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
+
+  tasks Task[]
 
   @@map("task_statuses")
 }
@@ -397,4 +405,38 @@ model LeaveRequest {
   @@index([userId, startDate])
   @@index([status])
   @@map("leave_requests")
+}
+
+// ---------------------------------------------------------------------------
+// Phase 3 — tasks
+// ---------------------------------------------------------------------------
+
+model Task {
+  id             String    @id @default(cuid())
+  title          String
+  description    String?
+  /// All three point at the seeded masters, so a company can rename or add
+  /// statuses without a migration — the board renders whatever is active.
+  taskTypeId     String?
+  taskPriorityId String
+  taskStatusId   String
+  assigneeId     String?
+  createdById    String
+  dueDate        DateTime? @db.Date
+  completedAt    DateTime?
+  /// Position within its status column, for ordering on the board.
+  sortOrder      Int       @default(0)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  taskType     TaskType?    @relation(fields: [taskTypeId], references: [id], onDelete: SetNull)
+  taskPriority TaskPriority @relation(fields: [taskPriorityId], references: [id])
+  taskStatus   TaskStatus   @relation(fields: [taskStatusId], references: [id])
+  assignee     User?        @relation("TaskAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
+  createdBy    User         @relation("TaskCreator", fields: [createdById], references: [id])
+
+  @@index([assigneeId, taskStatusId])
+  @@index([taskStatusId])
+  @@index([dueDate])
+  @@map("tasks")
 }

@@ -260,5 +260,29 @@
       "REJECTED": "Rejected",
       "CANCELLED": "Cancelled"
     }
+  },
+  "tasks": {
+    "new": "New task",
+    "title": "Title",
+    "description": "Description",
+    "assignee": "Assigned to",
+    "unassigned": "Unassigned",
+    "due": "Due",
+    "type": "Type",
+    "priority": "Priority",
+    "status": "Status",
+    "all": "All tasks",
+    "mine": "Mine",
+    "count": "{count} task(s)",
+    "none": "No tasks yet",
+    "noneAssigned": "Nothing assigned to you",
+    "emptyColumn": "Nothing here",
+    "overdue": "Overdue",
+    "moveTo": "Move to",
+    "saved": "Task saved",
+    "delete": "Delete task",
+    "raisedBy": "Raised by {name}",
+    "noDescription": "No description",
+    "titleTooShort": "Give the task a title of at least 3 characters"
   }
 }

@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardMuted, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/page";
 import { CheckInCard } from "@/components/check-in-card";
 import { todayAttendance } from "@/app/(app)/attendance/actions";
+import { myOpenTasks } from "@/app/(app)/tasks/actions";
+import { TaskCard } from "@/components/task-card";
 import { formatIstTime, minutesToHours } from "@/lib/workday";
 import { requireUser } from "@/lib/auth/guard";
 import { can } from "@/lib/auth/session";
@@ -24,6 +25,7 @@ export default async function HomePage() {
 
   const scope = await visibleUserIds(user);
   const attendanceToday = can(user, "ATTENDANCE", "ADD") ? await todayAttendance(user.id) : null;
+  const openTasks = can(user, "TASK", "VIEW") ? await myOpenTasks(user.id) : [];
   const [peopleCount, myDocuments] = await Promise.all([
     prisma.user.count({
       where: scope === "ALL" ? {} : { id: { in: scope } },
@@ -97,9 +99,30 @@ export default async function HomePage() {
       <section>
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-sm font-bold text-muted uppercase">{t("home.myTasks")}</h2>
-          <Badge tone="pending">{t("common.comingSoon")}</Badge>
+          <Link href="/tasks" className="text-sm font-semibold text-brand-ink underline underline-offset-4">
+            {t("tasks.all")}
+          </Link>
         </div>
-        <EmptyState>{t("home.tasksDisabled")}</EmptyState>
+        {openTasks.length === 0 ? (
+          <EmptyState>{t("tasks.noneAssigned")}</EmptyState>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {openTasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={{
+                  id: task.id,
+                  title: task.title,
+                  priorityName: task.taskPriority.name,
+                  priorityColour: task.taskPriority.colour,
+                  assigneeName: null,
+                  dueDate: task.dueDate,
+                  isTerminal: task.taskStatus.isTerminal,
+                }}
+              />
+            ))}
+          </div>
+        )}
       </section>
 
       <section className="mt-6">

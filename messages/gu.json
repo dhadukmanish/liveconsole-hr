@@ -260,5 +260,29 @@
       "REJECTED": "નામંજૂર",
       "CANCELLED": "રદ"
     }
+  },
+  "tasks": {
+    "new": "નવું કામ",
+    "title": "શીર્ષક",
+    "description": "વિગત",
+    "assignee": "કોને સોંપ્યું",
+    "unassigned": "કોઈને નહીં",
+    "due": "છેલ્લી તારીખ",
+    "type": "પ્રકાર",
+    "priority": "પ્રાથમિકતા",
+    "status": "સ્થિતિ",
+    "all": "બધાં કામ",
+    "mine": "મારાં",
+    "count": "{count} કામ",
+    "none": "હજી કોઈ કામ નથી",
+    "noneAssigned": "તમને કોઈ કામ સોંપાયું નથી",
+    "emptyColumn": "કંઈ નથી",
+    "overdue": "સમય વીતી ગયો",
+    "moveTo": "અહીં ખસેડો",
+    "saved": "કામ સેવ થયું",
+    "delete": "કામ કાઢી નાખો",
+    "raisedBy": "{name} એ બનાવ્યું",
+    "noDescription": "કોઈ વિગત નથી",
+    "titleTooShort": "ઓછામાં ઓછા 3 અક્ષરનું શીર્ષક લખો"
   }
 }
