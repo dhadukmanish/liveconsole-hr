@@ -64,11 +64,13 @@
         <!-- Uploads are streamed through an authorised route; 10 MB ceiling. -->
         <requestLimits maxAllowedContentLength="10485760" />
         <hiddenSegments>
-          <!-- Never let IIS serve secrets or the DB layer off disk. -->
+          <!-- Never let IIS serve secrets or the DB layer off disk.
+               App_Data is deliberately absent: IIS already hides it by default,
+               and adding it again is a duplicate key, which makes IIS reject the
+               whole file with 500.19 before any handler runs. -->
           <add segment="node_modules" />
           <add segment="prisma" />
           <add segment="logs" />
-          <add segment="App_Data" />
         </hiddenSegments>
         <fileExtensions>
           <add fileExtension=".env" allowed="false" />

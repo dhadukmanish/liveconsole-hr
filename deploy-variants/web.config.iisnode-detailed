@@ -33,7 +33,6 @@
           <add segment="node_modules" />
           <add segment="prisma" />
           <add segment="logs" />
-          <add segment="App_Data" />
         </hiddenSegments>
         <fileExtensions>
           <add fileExtension=".env" allowed="false" />

@@ -191,20 +191,30 @@ jobs:
             node scripts/ftp-deploy.mjs --logs 2>&1 | head -40
           }
 
-          echo "Uploading the control: no Node handler at all"
-          node scripts/ftp-deploy.mjs --put deploy-variants/web.config.minimal --as web.config
-          probe "CONTROL: no handler (a 404 here means the 500 is ours)"
+          echo "Uploading the real web.config, with the duplicate hidden segment removed"
+          node scripts/ftp-deploy.mjs --put web.config --as web.config
+          probe "httpPlatformHandler (production config)"
 
-          echo "Uploading variant C: httpPlatformHandler with detailed errors"
-          node scripts/ftp-deploy.mjs --put deploy-variants/web.config.detailed --as web.config
-          probe "C: httpPlatformHandler, detailed errors"
+          # If httpPlatformHandler genuinely is not registered on this account,
+          # the error moves from the duplicate key to the module itself. Only
+          # then is iisnode worth trying.
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "http://$HOST_NAME/login")
+          if [ "$code" != "200" ]; then
+            echo "Still not 200; trying iisnode with detailed errors"
+            node scripts/ftp-deploy.mjs --put deploy-variants/web.config.iisnode-detailed --as web.config
+            probe "iisnode (detailed errors)"
 
-          echo "Uploading variant B: iisnode with detailed errors"
-          node scripts/ftp-deploy.mjs --put deploy-variants/web.config.iisnode-detailed --as web.config
-          probe "B: iisnode, detailed errors"
-
-          echo
-          echo "All three tried. The site is currently running variant B."
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 "http://$HOST_NAME/login")
+            if [ "$code" = "200" ]; then
+              echo "::notice::iisnode is the handler this account has."
+            else
+              # Leave the production config in place rather than a diagnostic one.
+              echo "Neither handler served the app; restoring the production config."
+              node scripts/ftp-deploy.mjs --put web.config --as web.config
+            fi
+          else
+            echo "::notice::Site is up on httpPlatformHandler: http://$HOST_NAME/login"
+          fi
           exit 0
 
   deploy:
