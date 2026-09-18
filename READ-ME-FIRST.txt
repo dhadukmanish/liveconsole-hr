@@ -1,24 +1,36 @@
 Live Console HR — ready-to-upload build
 =======================================
 
-This branch IS the deployable app. Nothing here needs npm or a build step:
-the host only runs `node server.js`.
+This branch IS the deployable app. No npm, no build step: the host only
+runs `node server.js`.
+
+EASIEST WAY TO GET THE FILES
+---------------------------
+Download the branch as one zip:
+
+  https://github.com/dhadukmanish/liveconsole-hr/archive/refs/heads/deploy.zip
+
+GitHub wraps everything in a folder called "liveconsole-hr-deploy". The
+CONTENTS of that folder go in the site root — server.js must sit directly
+in the site folder, not one level down.
 
 UPLOAD
 ------
-1. Control panel -> File Manager -> open the task.kriviinfotech.com folder.
+Fastest: control panel -> File Manager -> upload the zip -> Extract.
+(FTP works too -- host win8194.site4now.net -- but it is 2,200 files and
+will take a long time file by file. Zip + Extract is minutes.)
+
+1. Open the task.kriviinfotech.com folder.
 2. DELETE the host's default index.html. IIS serves it ahead of the app and
    you will keep seeing the placeholder page until it is gone.
-3. Upload everything from this branch into that folder (or upload the zip
-   and use Extract, which is much faster than file-by-file FTP).
+3. Upload and extract so the folder contains: server.js, web.config,
+   .next/, node_modules/, public/, prisma/, App_Data/, logs/
 4. Control panel -> Hosting Manager -> Node.js: enable Node for this site
    and folder.
 
 CREATE .env  (REQUIRED — the app will not start without it)
 -----------------------------------------------------------
-In File Manager, create a file named  .env  in the same folder as
-server.js, with these five lines. Fill in the two database URLs from your
-site4now panel and paste the AUTH_SECRET value that was given to you.
+In File Manager create a file named  .env  next to server.js:
 
 DATABASE_URL="postgresql://USER:PASSWORD@HOST:6432/DBNAME?pgbouncer=true&connection_limit=1&sslmode=prefer"
 DIRECT_DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DBNAME?sslmode=prefer"
@@ -26,24 +38,24 @@ AUTH_SECRET="paste-the-long-random-string-here"
 UPLOAD_DIR="./App_Data/uploads"
 SMS_PROVIDER="console"
 
-Notes:
 - Port 6432 is a PgBouncer pooler, so pgbouncer=true and connection_limit=1
-  are required. Port 5432 is the direct connection, used only by migrations.
-- If the password contains @ or : or /, URL-encode it (@ becomes %40).
-- Keep .env in this folder only. web.config already blocks it over HTTP.
+  are required. 5432 is the direct connection, used only by migrations.
+- URL-encode special characters in the password (@ becomes %40).
+- This file must never be committed to git. web.config blocks it over HTTP.
 
 DATABASE TABLES
 ---------------
-The tables must exist before first sign-in. Either run
+Tables must exist before the first sign-in. Either run
 `npx prisma migrate deploy` from a machine that can reach port 5432, or
 paste prisma/migrations/<timestamp>_init/migration.sql into the panel's
-PostgreSQL query tool. Then seed the super admin (see DEPLOY.md on the
-main branch).
+PostgreSQL query tool. Then seed the super admin (DEPLOY.md, main branch).
 
 IF THE SITE 500s IMMEDIATELY
 ----------------------------
 The account is probably wired for iisnode rather than httpPlatformHandler.
-Open web.config, comment out the <handlers> + <httpPlatform> block and
+In web.config, comment out the <handlers> + <httpPlatform> block and
 uncomment the iisnode block below it. No rebuild needed.
+
+Check logs/ first whenever anything misbehaves.
 
 Full runbook: DEPLOY.md on the claude/vibrant-tesla-iherdc branch.
