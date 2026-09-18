@@ -181,6 +181,8 @@ back first or the older code may meet columns it does not expect.
 
 | Symptom | Cause |
 | --- | --- |
+| **Empty 500, no body, nothing in `logs/`** | IIS rejected `web.config` before any handler ran. Node never started, which is why the log is empty. Almost always a config error: the one that bit us was adding `App_Data` under `hiddenSegments`, which IIS already hides by default, so the duplicate key made the whole file invalid. Push `[handler]` to see IIS's own sub-status. |
+| **A generic "500 - Internal server error" page** | IIS sends detailed errors to local requests only. `deploy-variants/web.config.detailed` turns them on for remote callers; take it off again afterwards, since it exposes server paths. |
 | Host's placeholder page still shows | `index.html` was not deleted from the site root |
 | HTTP 500.19 | `web.config` references a handler the account does not have — switch to the iisnode block |
 | HTTP 502 / app never starts | Check `logs/`. Usually `.env` missing, or the app pool cannot write to `App_Data/uploads` |
@@ -189,6 +191,16 @@ back first or the older code may meet columns it does not expect.
 | OTP never arrives | `SMS_PROVIDER` is still `console` — the code is in `logs/`, not an SMS |
 
 ---
+
+## Diagnosing without a full redeploy
+
+Uploading 2,202 files takes fifteen minutes, which is far too slow a loop for
+debugging. Two commit-message markers avoid it:
+
+- `[inspect]` — lists the remote folder, pulls the host's stdout logs and
+  reports what the site returns over http and https. About forty seconds.
+- `[handler]` — swaps only `web.config` and probes after each variant, for
+  when the failure is IIS-side rather than in the app.
 
 ## Known constraints
 
