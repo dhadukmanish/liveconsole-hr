@@ -189,17 +189,20 @@ jobs:
             node scripts/ftp-deploy.mjs --logs 2>&1 | head -40
           }
 
-          echo "Uploading variant A: httpPlatformHandler, IIS error pages visible"
-          node scripts/ftp-deploy.mjs --put deploy-variants/web.config.httpplatform-debug --as web.config
-          probe "A: httpPlatformHandler"
+          echo "Uploading the control: no Node handler at all"
+          node scripts/ftp-deploy.mjs --put deploy-variants/web.config.minimal --as web.config
+          probe "CONTROL: no handler (a 404 here means the 500 is ours)"
 
-          echo
+          echo "Uploading variant C: httpPlatformHandler with detailed errors"
+          node scripts/ftp-deploy.mjs --put deploy-variants/web.config.detailed --as web.config
+          probe "C: httpPlatformHandler, detailed errors"
+
           echo "Uploading variant B: iisnode"
           node scripts/ftp-deploy.mjs --put deploy-variants/web.config.iisnode --as web.config
           probe "B: iisnode"
 
           echo
-          echo "Both variants tried. The site is currently running variant B."
+          echo "All three tried. The site is currently running variant B."
           exit 0
 
   deploy:

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- CONTROL: no Node handler at all, detailed errors on. If the site answers
+     404 with this in place, the 500 comes from our handler block; if it still
+     answers 500, the problem is outside our web.config. -->
+<configuration>
+  <system.webServer>
+    <httpErrors errorMode="Detailed" />
+  </system.webServer>
+</configuration>

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- DIAGNOSTIC: httpPlatformHandler, detailed errors sent to remote callers. -->
+<!--
+  IIS configuration for SmarterASP.NET / site4now.
+
+  PRIMARY: httpPlatformHandler. This is what SmarterASP's current Node.js and
+  Next.js KB articles use. IIS launches `node server.js` itself, picks a free
+  port and passes it in as %HTTP_PLATFORM_PORT%, which server.js reads from
+  process.env.PORT.
+
+  FALLBACK: if the hosting account is wired for iisnode instead, comment out the
+  <handlers> + <httpPlatform> block below and uncomment the iisnode block.
+  No rebuild is needed to switch.
+-->
+<configuration>
+  <system.webServer>
+
+    <handlers>
+      <add name="httpPlatformHandler" path="*" verb="*"
+           modules="httpPlatformHandler" resourceType="Unspecified" />
+    </handlers>
+
+    <!--
+      startupTimeLimit is deliberately well above the 20s default: Next boot plus
+      Prisma client init on shared hosting is slow enough that 20s flaps.
+      To pin a Node version, upload node.exe to /App_Data and point processPath
+      at it (e.g. processPath="..\App_Data\node.exe").
+    -->
+    <httpPlatform processPath="node"
+                  arguments="server.js"
+                  startupTimeLimit="120"
+                  startupRetryCount="3"
+                  requestTimeout="00:04:00"
+                  stdoutLogEnabled="true"
+                  stdoutLogFile=".\logs\node">
+      <environmentVariables>
+        <environmentVariable name="PORT" value="%HTTP_PLATFORM_PORT%" />
+        <environmentVariable name="NODE_ENV" value="production" />
+      </environmentVariables>
+    </httpPlatform>
+
+    <!-- iisnode fallback — uncomment this block and comment out the two above.
+    <handlers>
+      <add name="iisnode" path="server.js" verb="*" modules="iisnode" />
+    </handlers>
+    <rewrite>
+      <rules>
+        <rule name="nextjs" stopProcessing="true">
+          <match url="^(.*)$" />
+          <conditions logicalGrouping="MatchAll">
+            <add input="{REQUEST_FILENAME}" matchType="IsFile" negate="true" />
+            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" negate="true" />
+          </conditions>
+          <action type="Rewrite" url="server.js" />
+        </rule>
+      </rules>
+    </rewrite>
+    <iisnode node_env="production" nodeProcessCountPerApplication="1"
+             loggingEnabled="true" logDirectory="iisnode" />
+    -->
+
+    <security>
+      <requestFiltering>
+        <!-- Uploads are streamed through an authorised route; 10 MB ceiling. -->
+        <requestLimits maxAllowedContentLength="10485760" />
+        <hiddenSegments>
+          <!-- Never let IIS serve secrets or the DB layer off disk. -->
+          <add segment="node_modules" />
+          <add segment="prisma" />
+          <add segment="logs" />
+          <add segment="App_Data" />
+        </hiddenSegments>
+        <fileExtensions>
+          <add fileExtension=".env" allowed="false" />
+          <add fileExtension=".ts" allowed="false" />
+        </fileExtensions>
+      </requestFiltering>
+    </security>
+
+    <!-- TEMPORARY: sends IIS's real sub-status (500.19 and friends) to remote
+         callers. Detailed errors expose server paths, so this variant is for
+         diagnosis only and must not stay on the live site. -->
+    <httpErrors errorMode="Detailed" />
+
+  </system.webServer>
+</configuration>
