@@ -18,7 +18,8 @@
     "db:reset": "prisma migrate reset --force",
     "dev:db:start": "bash scripts/local-db.sh start",
     "dev:db:stop": "bash scripts/local-db.sh stop",
-    "package": "bash scripts/package-deploy.sh"
+    "package": "bash scripts/package-deploy.sh",
+    "deploy:ftp": "node scripts/ftp-deploy.mjs"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -46,6 +47,7 @@
     "@types/qrcode": "^1.5.5",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "basic-ftp": "^6.2.1",
     "eslint": "^9",
     "eslint-config-next": "15.5.25",
     "prisma": "^6.19.0",

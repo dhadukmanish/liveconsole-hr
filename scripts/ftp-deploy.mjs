@@ -1,0 +1,188 @@
+/**
+ * Uploads the built payload to site4now over FTP.
+ *
+ * Run this from your own machine — a cloud build sandbox usually cannot open
+ * outbound FTP at all.
+ *
+ *   FTP_HOST=win8194.site4now.net FTP_USER=... FTP_PASSWORD=... \
+ *     node scripts/ftp-deploy.mjs
+ *
+ * Options:
+ *   --dir <path>      what to upload            (default: ./deploy-payload)
+ *   --remote <path>   remote folder             (default: /)
+ *   --zip-only        upload just deploy-payload.zip, for extracting in the
+ *                     panel's File Manager — one file instead of ~2,200
+ *   --dry-run         list what would be sent, connect to nothing
+ *   --secure          use FTPS (explicit TLS)
+ *   --port <n>        control port             (default: 21)
+ *
+ * Credentials are read from the environment (or a local .env.ftp) and are
+ * never written to the repository.
+ */
+import { Client } from "basic-ftp";
+import { existsSync, readFileSync, statSync } from "node:fs";
+import { readdir } from "node:fs/promises";
+import path from "node:path";
+
+const args = process.argv.slice(2);
+const flag = (name) => args.includes(`--${name}`);
+const option = (name, fallback) => {
+  const index = args.indexOf(`--${name}`);
+  return index !== -1 && args[index + 1] ? args[index + 1] : fallback;
+};
+
+// Allow a local .env.ftp so the password never has to be typed into a shell
+// (and never into the repo — .env.ftp is gitignored).
+function loadEnvFile(file = ".env.ftp") {
+  if (!existsSync(file)) return;
+  for (const line of readFileSync(file, "utf8").split("\n")) {
+    const match = line.match(/^\s*([A-Z_]+)\s*=\s*(.*)\s*$/);
+    if (!match) continue;
+    const value = match[2].replace(/^["']|["']$/g, "");
+    process.env[match[1]] ??= value;
+  }
+}
+loadEnvFile();
+
+const HOST = process.env.FTP_HOST;
+const USER = process.env.FTP_USER;
+const PASSWORD = process.env.FTP_PASSWORD;
+const REMOTE = option("remote", process.env.FTP_REMOTE ?? "/");
+const PORT = Number(option("port", process.env.FTP_PORT ?? 21));
+const LOCAL = path.resolve(option("dir", "deploy-payload"));
+const DRY = flag("dry-run");
+const ZIP_ONLY = flag("zip-only");
+
+if (!DRY && (!HOST || !USER || !PASSWORD)) {
+  console.error(
+    "Missing credentials. Set FTP_HOST, FTP_USER and FTP_PASSWORD in the\n" +
+      "environment or in a .env.ftp file next to package.json.",
+  );
+  process.exit(1);
+}
+
+if (!ZIP_ONLY && !existsSync(LOCAL)) {
+  console.error(`${LOCAL} does not exist. Run: npm run package`);
+  process.exit(1);
+}
+
+/** Refuse to upload a payload that still has secrets in it. */
+function guardAgainstSecrets(dir) {
+  const envFile = path.join(dir, ".env");
+  if (existsSync(envFile)) {
+    console.warn(
+      "\n  NOTE: deploy-payload/.env exists and WILL be uploaded.\n" +
+        "  That is fine if you meant to publish this environment file, but it\n" +
+        "  must never be committed to git.\n",
+    );
+  }
+}
+
+async function countFiles(dir) {
+  let files = 0;
+  let bytes = 0;
+  const walk = async (current) => {
+    for (const entry of await readdir(current, { withFileTypes: true })) {
+      const full = path.join(current, entry.name);
+      if (entry.isDirectory()) await walk(full);
+      else {
+        files += 1;
+        bytes += statSync(full).size;
+      }
+    }
+  };
+  await walk(dir);
+  return { files, bytes };
+}
+
+const mb = (bytes) => `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+
+async function main() {
+  if (ZIP_ONLY) {
+    const zip = path.resolve("deploy-payload.zip");
+    if (!existsSync(zip)) {
+      console.error("deploy-payload.zip not found. Run: npm run package");
+      process.exit(1);
+    }
+    console.log(`Uploading one file: deploy-payload.zip (${mb(statSync(zip).size)})`);
+    console.log("Extract it afterwards in the panel's File Manager.\n");
+    if (DRY) return;
+
+    const client = new Client(120_000);
+    client.ftp.verbose = false;
+    await client.access({
+      host: HOST,
+      port: PORT,
+      user: USER,
+      password: PASSWORD,
+      secure: flag("secure"),
+    });
+    await client.ensureDir(REMOTE);
+    client.trackProgress((info) => {
+      if (info.bytes > 0) process.stdout.write(`\r  ${mb(info.bytesOverall)} sent   `);
+    });
+    await client.uploadFrom(zip, path.posix.join(REMOTE, "deploy-payload.zip"));
+    client.trackProgress();
+    client.close();
+    console.log("\nDone.");
+    return;
+  }
+
+  guardAgainstSecrets(LOCAL);
+  const { files, bytes } = await countFiles(LOCAL);
+  console.log(`Uploading ${files} files (${mb(bytes)})`);
+  console.log(`  from: ${LOCAL}`);
+  console.log(`  to:   ${HOST ?? "(dry run)"}${REMOTE}`);
+  console.log(
+    "\n  This is a lot of small files; FTP will take a while. If you have\n" +
+      "  File Manager access, `--zip-only` plus Extract is much faster.\n",
+  );
+
+  if (DRY) {
+    console.log("Dry run — nothing was sent.");
+    return;
+  }
+
+  const client = new Client(120_000);
+  client.ftp.verbose = false;
+
+  // trackProgress fires more than once per file, so count distinct names.
+  const seen = new Set();
+  client.trackProgress((info) => {
+    if (info.type !== "upload" || !info.name) return;
+    seen.add(info.name);
+    const label = info.name.length > 44 ? `...${info.name.slice(-44)}` : info.name;
+    process.stdout.write(
+      `\r  ${String(Math.min(seen.size, files)).padStart(4)}/${files}  ${mb(info.bytesOverall).padStart(8)}  ${label.padEnd(48)}`,
+    );
+  });
+
+  try {
+    await client.access({
+      host: HOST,
+      port: PORT,
+      user: USER,
+      password: PASSWORD,
+      secure: flag("secure"),
+    });
+    await client.ensureDir(REMOTE);
+    // uploadFromDir mirrors the tree, creating directories as needed. It
+    // overwrites existing files, which is what a redeploy wants.
+    await client.uploadFromDir(LOCAL, REMOTE);
+    client.trackProgress();
+    console.log("\n\nUpload finished.");
+    console.log("Next: create .env next to server.js, then enable Node.js for the site.");
+  } catch (error) {
+    client.trackProgress();
+    console.error("\n\nUpload failed:", error.message);
+    console.error(
+      "\nIf this is a timeout or 'connection reset', check that outbound FTP is\n" +
+        "allowed from this machine — some office and cloud networks block port 21.",
+    );
+    process.exitCode = 1;
+  } finally {
+    client.close();
+  }
+}
+
+main();

@@ -19,3 +19,5 @@ deploy-payload/
 deploy-payload.zip
 secrets/
 .pgdata/
+.env.ftp
+.vscode/sftp.json

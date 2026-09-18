@@ -14,8 +14,8 @@ here and the host only ever runs `node server.js`.
 npm run package
 ```
 
-This produces `deploy-payload/` and `deploy-payload.zip` (~33 MB zipped, ~98 MB
-unpacked). It:
+This produces `deploy-payload/` and `deploy-payload.zip` (~25 MB zipped, ~79 MB
+unpacked, 2,202 files). It:
 
 1. runs `prisma generate` and `next build` (standalone output),
 2. copies the standalone server, `.next/static` and `public/`,
@@ -26,8 +26,8 @@ unpacked). It:
    the host,
 6. writes `.env` from `secrets/production.env` (never committed),
 7. creates `App_Data/uploads/` and `logs/`,
-8. prunes build-only packages (webpack, esbuild, typescript…), about a third of
-   the upload.
+8. prunes build-only packages (webpack, esbuild, typescript) and sharp, which
+   only serves `next/image` and is not used here — 132 MB down to 79 MB.
 
 > The payload's `server.js` is the one Next generates for standalone output, not
 > the `server.js` in the repo root. Next inlines the build-time config into it,
@@ -37,11 +37,44 @@ unpacked). It:
 
 ## 2. Upload
 
+Three ways; all put the same files in the same place. Whichever you pick, the
+site folder must end up with `server.js` directly inside it, not one level down.
+
+### a. VS Code SFTP extension
+
+```bash
+cp .vscode/sftp.sample.json .vscode/sftp.json   # add your password if you like
+npm run package
+# Command palette -> SFTP: Upload Folder -> deploy-payload
+```
+
+`context` is already set to `deploy-payload`, so only the built app is sent,
+never the source tree. `uploadOnSave` is off on purpose — this app must be
+rebuilt before anything ships. Check `remotePath` once against the remote
+listing. Details in `.vscode/README-sftp.md`.
+
+### b. One command from your machine
+
+```bash
+npm run package
+FTP_HOST=win8194.site4now.net FTP_USER=... FTP_PASSWORD=... npm run deploy:ftp
+```
+
+Or put those three in a `.env.ftp` file (gitignored) and just run
+`npm run deploy:ftp`. Add `--zip-only` to send the single 25 MB zip instead of
+~2,200 files, then Extract it in the File Manager — far faster. `--dry-run`
+shows what would go without connecting.
+
+This will not work from a cloud build sandbox: outbound FTP is usually blocked
+there, which is exactly why the payload is committed to the `deploy` branch.
+
+### c. Control panel File Manager
+
 1. Control panel → **File Manager** → the `task.kriviinfotech.com` folder.
 2. **Delete the host's default `index.html`.** IIS serves it ahead of the app and
    you will keep seeing the placeholder page until it is gone.
 3. Upload `deploy-payload.zip` and extract it in place (far faster than FTP,
-   which would transfer ~20,000 small files).
+   which sends all 2,202 files one at a time).
 4. Confirm the site root now contains `server.js`, `web.config`, `.next/`,
    `node_modules/`, `public/`, `.env`, `App_Data/`.
 
