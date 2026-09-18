@@ -66,17 +66,20 @@ const PUT_FILE = option("put", null);
 const PUT_AS = option("as", null);
 const REMOVE_INDEX = flag("remove-default-index");
 
-if (!DRY && (!HOST || !USER || !PASSWORD)) {
-  console.error(
-    "Missing credentials. Set FTP_HOST, FTP_USER and FTP_PASSWORD in the\n" +
-      "environment or in a .env.ftp file next to package.json.",
-  );
-  process.exit(1);
-}
+/** Validated when the script runs, not when it is imported for testing. */
+function assertUsable() {
+  if (!DRY && (!HOST || !USER || !PASSWORD)) {
+    console.error(
+      "Missing credentials. Set FTP_HOST, FTP_USER and FTP_PASSWORD in the\n" +
+        "environment or in a .env.ftp file next to package.json.",
+    );
+    process.exit(1);
+  }
 
-if (!ZIP_ONLY && !LIST_ONLY && !LOGS_ONLY && !PUT_FILE && !existsSync(LOCAL)) {
-  console.error(`${LOCAL} does not exist. Run: npm run package`);
-  process.exit(1);
+  if (!ZIP_ONLY && !LIST_ONLY && !LOGS_ONLY && !PUT_FILE && !existsSync(LOCAL)) {
+    console.error(`${LOCAL} does not exist. Run: npm run package`);
+    process.exit(1);
+  }
 }
 
 /** Refuse to upload a payload that still has secrets in it. */
@@ -158,7 +161,83 @@ async function printRemoteLogs(client) {
   }
 }
 
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+/**
+ * Walks the payload and uploads each file, tolerating the one failure mode a
+ * Windows host reliably produces: a file the running app holds open.
+ *
+ * A locked file whose size already matches the host is treated as up to date —
+ * node_modules content does not change without its size changing — while a
+ * locked file that genuinely differs fails the deploy rather than leaving the
+ * site half updated.
+ */
+export async function uploadTree(client, localRoot, remoteRoot) {
+  const { readdir, stat } = await import("node:fs/promises");
+  const uploaded = { count: 0 };
+  const skipped = [];
+  const failed = [];
+
+  async function remoteSize(remotePath) {
+    try {
+      return await client.size(remotePath);
+    } catch {
+      return null;
+    }
+  }
+
+  async function walk(localDir, remoteDir) {
+    await client.ensureDir(remoteDir);
+    const entries = await readdir(localDir, { withFileTypes: true });
+
+    for (const entry of entries) {
+      const localPath = path.join(localDir, entry.name);
+      const remotePath = path.posix.join(remoteDir, entry.name);
+
+      if (entry.isDirectory()) {
+        await walk(localPath, remotePath);
+        // ensureDir leaves the client inside the directory it created.
+        await client.cd(remoteDir);
+        continue;
+      }
+
+      const localSize = (await stat(localPath)).size;
+      let lastError;
+
+      for (let attempt = 1; attempt <= 3; attempt += 1) {
+        try {
+          await client.uploadFrom(localPath, remotePath);
+          uploaded.count += 1;
+          lastError = undefined;
+          break;
+        } catch (error) {
+          lastError = error;
+          // 550 here is almost always "in use by another process".
+          await sleep(attempt * 1500);
+        }
+      }
+
+      if (lastError) {
+        const size = await remoteSize(remotePath);
+        if (size === localSize) {
+          skipped.push(path.posix.relative(remoteRoot, remotePath) || entry.name);
+        } else {
+          failed.push({
+            path: remotePath,
+            reason: String(lastError.message ?? lastError).slice(0, 120),
+          });
+        }
+      }
+    }
+  }
+
+  await walk(localRoot, remoteRoot);
+  return { uploaded: uploaded.count, skipped, failed };
+}
+
 async function main() {
+  assertUsable();
+
   if (PUT_FILE) {
     const target = PUT_AS ?? path.basename(PUT_FILE);
     const client = new Client(60_000);
@@ -278,12 +357,29 @@ async function main() {
       }
     }
 
-    // uploadFromDir mirrors the tree, creating directories as needed. It
-    // overwrites existing files, which is what a redeploy wants.
-    await client.uploadFromDir(LOCAL, REMOTE);
+    // Uploaded file by file rather than with uploadFromDir, because a redeploy
+    // onto a running Windows app hits locked files, and one locked file must
+    // not abandon the other two thousand.
+    const result = await uploadTree(client, LOCAL, REMOTE);
     client.trackProgress();
-    console.log("\n\nUpload finished.");
-    console.log("Next: create .env next to server.js, then enable Node.js for the site.");
+
+    console.log("\n");
+    console.log(`Uploaded ${result.uploaded} files.`);
+    if (result.skipped.length > 0) {
+      console.log(
+        `\n${result.skipped.length} file(s) were locked by the running app but are` +
+          " already identical on the host, so they were left alone:",
+      );
+      for (const name of result.skipped.slice(0, 10)) console.log(`  ${name}`);
+    }
+    if (result.failed.length > 0) {
+      console.error(`\n${result.failed.length} file(s) could not be uploaded:`);
+      for (const entry of result.failed.slice(0, 15)) {
+        console.error(`  ${entry.path}: ${entry.reason}`);
+      }
+      throw new Error("some files failed to upload");
+    }
+    console.log("Upload finished.");
   } catch (error) {
     client.trackProgress();
     console.error("\n\nUpload failed:", error.message);
@@ -297,4 +393,6 @@ async function main() {
   }
 }
 
-main();
+if (process.argv[1] && import.meta.url.endsWith(path.basename(process.argv[1]))) {
+  main();
+}

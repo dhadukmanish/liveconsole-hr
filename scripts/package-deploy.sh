@@ -54,8 +54,14 @@ mkdir -p "$OUT/prisma"
 cp -a "$ROOT/prisma/schema.prisma" "$OUT/prisma/"
 [ -d "$ROOT/prisma/migrations" ] && cp -a "$ROOT/prisma/migrations" "$OUT/prisma/"
 
-# 5. The Windows Prisma query engine. Built on Linux, the traced copy only has
-#    the Linux engine, and the app cannot open a connection without this one.
+# 5a. Drop the Linux query engine. binaryTargets fetches both, but the host runs
+#     Windows and will never load the .so — it is 17 MB of dead weight, and it is
+#     the file Windows had locked when a redeploy failed with "550 the process
+#     cannot access the file".
+rm -f "$OUT"/node_modules/.prisma/client/libquery_engine-*.so.node
+
+# 5b. The Windows Prisma query engine. Built on Linux, the traced copy only has
+#     the Linux engine, and the app cannot open a connection without this one.
 PRISMA_OUT="$OUT/node_modules/.prisma/client"
 if [ -f "$ROOT/node_modules/.prisma/client/query_engine-windows.dll.node" ]; then
   mkdir -p "$PRISMA_OUT"
