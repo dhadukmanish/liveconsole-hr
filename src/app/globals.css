@@ -1,0 +1,98 @@
+@import "tailwindcss";
+
+/* Class-based dark mode: the user's choice is stored on their profile, so we
+   cannot rely on the OS preference alone. */
+@custom-variant dark (&:is(.dark *));
+
+:root {
+  --page: #fff8f0;
+  --card: #ffffff;
+  --ink: #2c2c2a;
+  --muted: #6b6a65;
+  --hairline: #ece7df;
+  --brand: #f7941d;
+  --brand-hover: #c96e0a;
+  --danger: #e8412c;
+  --pending: #fbb03b;
+  --success: #1d9e75;
+  --on-brand: #ffffff;
+}
+
+.dark {
+  --page: #151412;
+  --card: #2c2b28;
+  --ink: #f1efe8;
+  --muted: #a8a49a;
+  --hairline: #3a3934;
+  /* brand orange is unchanged in dark mode, per the brand spec */
+}
+
+@theme inline {
+  --color-page: var(--page);
+  --color-card: var(--card);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-hairline: var(--hairline);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-danger: var(--danger);
+  --color-pending: var(--pending);
+  --color-success: var(--success);
+  --color-on-brand: var(--on-brand);
+
+  --font-sans: var(--font-mukta), var(--font-mukta-vaani), ui-sans-serif,
+    system-ui, sans-serif;
+
+  --radius-card: 0.875rem;
+}
+
+@layer base {
+  html {
+    /* Brief: minimum text size 14px. */
+    font-size: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    background-color: var(--color-page);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    font-size: 0.9375rem; /* 15px floor, never below the 14px minimum */
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Tap targets: 48px minimum on anything interactive. */
+  button,
+  a[role="button"],
+  [type="button"],
+  [type="submit"],
+  select {
+    min-height: 3rem;
+  }
+
+  input,
+  textarea,
+  select {
+    /* 16px stops iOS Safari zooming the viewport on focus. */
+    font-size: 1rem;
+    min-height: 3rem;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-brand);
+    outline-offset: 2px;
+  }
+}
+
+/* Respect the OS for users who have not chosen yet: the <html> element gets
+   `dark` from a small inline script in layout.tsx, so this is only a fallback
+   for the very first paint. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
