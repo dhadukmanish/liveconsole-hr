@@ -266,6 +266,11 @@ debugging. Two commit-message markers avoid it:
 - `[cron-url]` — prints the daily reminder URL into the run summary.
 - `[reset-admin]` — resets the SUPERADMIN password from the repository secret.
 
+Only the jobs that write to the host are serialised, and only against each
+other. Serialising the whole workflow looked safer but was not: GitHub holds
+just **one** run in a concurrency group's queue, so pushing anything new
+cancelled the run already waiting — which quietly threw away a queued deploy.
+
 ## Known constraints
 
 - **No cron on shared hosting.** Reminders are an API route called by an

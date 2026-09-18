@@ -36,11 +36,11 @@ on:
         type: boolean
         default: false
 
-concurrency:
-  # Never let two deploys write to the same FTP account at once.
-  group: deploy-site4now
-  cancel-in-progress: false
-
+# Concurrency is per job, not workflow-wide. Workflow-wide looked right, but
+# GitHub only ever holds ONE run in a group's queue: pushing anything new
+# cancelled the run already waiting, which silently threw away a queued deploy
+# and a queued diagnostic. Only the jobs that write to the host need to be
+# serialised — reading the site or its folder never conflicts.
 jobs:
   gate:
     # Decides whether this push is asking to ship. Split out because a job-level
@@ -226,6 +226,10 @@ jobs:
     # in turn and let IIS show its own error page instead of guessing.
     needs: gate
     if: needs.gate.outputs.handler == 'true'
+    # Swaps web.config on the host, so it must not race a deploy.
+    concurrency:
+      group: write-site4now
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     env:
       FTP_HOST: ${{ secrets.FTP_HOST }}
@@ -354,6 +358,10 @@ jobs:
   deploy:
     needs: gate
     if: needs.gate.outputs.deploy == 'true'
+    # Never let two deploys write to the same FTP account at once.
+    concurrency:
+      group: write-site4now
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
