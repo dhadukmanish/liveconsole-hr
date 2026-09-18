@@ -81,9 +81,12 @@ touch "$OUT/App_Data/uploads/.keep" "$OUT/logs/.keep"
 #    server never loads. Saves roughly a third of the upload over FTP.
 echo "==> Pruning build-only packages"
 BEFORE=$(du -sm "$OUT" | cut -f1)
+# sharp/@img is ~20 MB and only serves next/image, which this app does not use.
+# Drop it while that stays true; adding an <Image> means removing it from this
+# list and re-packaging.
 for pkg in webpack @esbuild typescript terser @webassemblyjs uglify-js \
            watchpack tapable enhanced-resolve loader-runner schema-utils \
-           webpack-sources jest-worker; do
+           webpack-sources jest-worker @img sharp; do
   rm -rf "${OUT:?}/node_modules/${pkg}"
 done
 AFTER=$(du -sm "$OUT" | cut -f1)
