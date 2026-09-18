@@ -13,6 +13,10 @@ export default getRequestConfig(async () => {
 
   return {
     locale,
+    // Without this next-intl formats dates in the server's zone — the live site
+    // was reporting America/Los_Angeles. Everything user-facing here is Indian
+    // office time.
+    timeZone: "Asia/Kolkata",
     messages: (await import(`../../messages/${locale}.json`)).default,
   };
 });
