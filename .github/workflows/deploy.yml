@@ -152,23 +152,58 @@ jobs:
           github.event_name != 'workflow_dispatch' ||
           inputs.run_migrations
         env:
-          # Migrations must use the direct connection: they cannot run through
-          # the PgBouncer pooler on port 6432.
-          DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL || secrets.DATABASE_URL }}
-          DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL || secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+          POOLED_URL: ${{ secrets.DATABASE_URL }}
         run: |
-          npx prisma migrate deploy
-          echo "Migrations applied."
+          set +e
+
+          # Preferred: the direct connection. Some hosts, this one included,
+          # only expose the pooler to the outside world, so this can fail with
+          # P1001 even though the credentials are perfectly good.
+          if [ -n "$DIRECT_URL" ]; then
+            echo "Trying the direct connection..."
+            DATABASE_URL="$DIRECT_URL" DIRECT_DATABASE_URL="$DIRECT_URL" \
+              npx prisma migrate deploy
+            if [ $? -eq 0 ]; then
+              echo "Migrations applied over the direct connection."
+              echo "DB_ROUTE=direct" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            echo "::warning::Direct connection unavailable; falling back to the pooler."
+          fi
+
+          # Fallback: through PgBouncer. Prisma normally takes a Postgres
+          # advisory lock around a migration, which a transaction-mode pooler
+          # cannot hold across statements. The deploy concurrency group already
+          # serialises runs, so dropping the lock is safe here.
+          export PRISMA_SCHEMA_DISABLE_ADVISORY_LOCK=true
+          DATABASE_URL="$POOLED_URL" DIRECT_DATABASE_URL="$POOLED_URL" \
+            npx prisma migrate deploy
+          status=$?
+          if [ $status -ne 0 ]; then
+            echo "::error::Migrations failed over both the direct connection and the pooler."
+            echo "Next step is applying prisma/migrations/*/migration.sql by hand in the panel's query tool."
+            exit $status
+          fi
+          echo "Migrations applied through the pooler."
+          echo "DB_ROUTE=pooled" >> "$GITHUB_ENV"
 
       - name: Seed roles, permissions, masters and the super admin
         if: needs.gate.outputs.seed == 'true'
         env:
-          DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL || secrets.DATABASE_URL }}
-          DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL || secrets.DATABASE_URL }}
+          DIRECT_URL: ${{ secrets.DIRECT_DATABASE_URL }}
+          POOLED_URL: ${{ secrets.DATABASE_URL }}
           SUPERADMIN_MOBILE: ${{ vars.SUPERADMIN_MOBILE }}
           SUPERADMIN_NAME: ${{ vars.SUPERADMIN_NAME }}
           SUPERADMIN_PASSWORD: ${{ secrets.SUPERADMIN_PASSWORD }}
         run: |
+          # Use whichever route the migration step proved reachable.
+          if [ "$DB_ROUTE" = "pooled" ] || [ -z "$DIRECT_URL" ]; then
+            export DATABASE_URL="$POOLED_URL"
+          else
+            export DATABASE_URL="$DIRECT_URL"
+          fi
+          export DIRECT_DATABASE_URL="$DATABASE_URL"
           npm run db:seed
           echo "::notice::If a super admin was created, its password is in the step log above. Change it at first sign-in."
 
