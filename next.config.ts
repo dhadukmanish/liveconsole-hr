@@ -10,8 +10,40 @@ const withPWA = withPWAInit({
   disable: process.env.NODE_ENV === "development",
   register: true,
   reloadOnOnline: true,
+  // Never cache navigations or the start URL. Every page here is behind a login,
+  // and a cached HTML page on a shared phone would be served to whoever opens
+  // the app next. Only immutable static assets are cached.
+  cacheStartUrl: false,
+  dynamicStartUrl: false,
+  cacheOnFrontEndNav: false,
   workboxOptions: {
     skipWaiting: true,
+    clientsClaim: true,
+    cleanupOutdatedCaches: true,
+    runtimeCaching: [
+      {
+        // Hashed build output: safe to cache forever, identical for everyone.
+        urlPattern: /\/_next\/static\/.*/i,
+        handler: "CacheFirst",
+        options: {
+          cacheName: "next-static",
+          expiration: { maxEntries: 256, maxAgeSeconds: 30 * 24 * 60 * 60 },
+        },
+      },
+      {
+        urlPattern: /\/icons\/.*\.png$/i,
+        handler: "CacheFirst",
+        options: {
+          cacheName: "app-icons",
+          expiration: { maxEntries: 16, maxAgeSeconds: 30 * 24 * 60 * 60 },
+        },
+      },
+      {
+        urlPattern: /\/manifest\.webmanifest$/i,
+        handler: "StaleWhileRevalidate",
+        options: { cacheName: "app-manifest" },
+      },
+    ],
   },
 });
 

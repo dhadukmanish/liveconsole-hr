@@ -39,3 +39,16 @@ export async function requirePermission(
   if (!can(user, module, action)) throw new ForbiddenError(`${module}:${action} denied`);
   return user;
 }
+
+/** Permissions administration is SUPERADMIN-only per the brief. */
+export async function requireSuperAdmin(): Promise<CurrentUser> {
+  const user = await requireUser();
+  if (!user.isSuperAdmin) redirect("/home");
+  return user;
+}
+
+export async function requireSuperAdminAction(): Promise<CurrentUser> {
+  const user = await getCurrentUser();
+  if (!user?.isSuperAdmin) throw new ForbiddenError("superadmin only");
+  return user;
+}

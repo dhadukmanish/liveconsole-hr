@@ -18,7 +18,17 @@ const eslintConfig = [
       "out/**",
       "build/**",
       "next-env.d.ts",
+      "public/sw.js",
+      "public/workbox-*.js",
     ],
+  },
+  {
+    // server.js is the IIS entry point and must stay CommonJS: httpPlatformHandler
+    // launches it with plain `node server.js`, outside any bundler.
+    files: ["server.js"],
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
   },
 ];
 

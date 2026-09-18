@@ -102,12 +102,12 @@ async function main() {
   console.log(`roles: ${ROLES.length}`);
 
   // --- permission catalogue ---------------------------------------------
-  for (const module of MODULES) {
+  for (const moduleName of MODULES) {
     for (const action of ACTIONS) {
       await prisma.permission.upsert({
-        where: { module_action: { module, action } },
+        where: { module_action: { module: moduleName, action } },
         update: {},
-        create: { module, action },
+        create: { module: moduleName, action },
       });
     }
   }
