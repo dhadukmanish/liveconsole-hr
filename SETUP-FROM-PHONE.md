@@ -44,7 +44,6 @@ Same page, **Variables** tab → **New repository variable**:
 | `SUPERADMIN_NAME` | your name | shown in the app |
 | `SITE_URL` | `https://task.kriviinfotech.com` | used by the health check |
 | `FTP_REMOTE` | leave unset at first | set it only if the site is not at the FTP root |
-| `BETA_BANNER` | `true` | set to `false` to remove the beta strip |
 | `SESSION_COOKIE_SECURE` | `false` | set to `true` once HTTPS works |
 | `NOTIFY_CHANNEL` | leave unset | `whatsapp`, `sms` or `console`; unset works it out from what is configured |
 | `WHATSAPP_TEMPLATE_LANG` | `en` | set to `hi` or `gu` if your approved templates are in that language |

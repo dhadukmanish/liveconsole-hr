@@ -1,6 +1,5 @@
 import { getTranslations } from "next-intl/server";
 import { AppShell, type NavItem } from "@/components/app-shell";
-import { BetaBanner } from "@/components/beta-banner";
 import { ForcedPasswordChange } from "@/components/forced-password-change";
 import { requireUser } from "@/lib/auth/guard";
 import { can } from "@/lib/auth/session";
@@ -56,7 +55,6 @@ export default async function AppLayout({
   if (user.mustChangePassword) {
     return (
       <main className="mx-auto w-full max-w-md px-4 py-8">
-        <BetaBanner className="mb-4" />
         <ForcedPasswordChange name={user.name} />
       </main>
     );
@@ -69,7 +67,6 @@ export default async function AppLayout({
       userName={user.name}
       roleName={t(`roles.${user.roleCode}` as "roles.ADMIN")}
     >
-      <BetaBanner className="mb-4" />
       {children}
     </AppShell>
   );

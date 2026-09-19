@@ -111,3 +111,13 @@ export function smsProvider(): SmsProvider {
 export function canRevealOtp(): boolean {
   return smsProvider().exposesCodeToClient && process.env.NODE_ENV !== "production";
 }
+
+/**
+ * Whether a code can actually reach the person. The console provider in
+ * production writes to a log file nobody signing in can read, and telling them
+ * "OTP sent to your mobile" in that state leaves them waiting for a text that
+ * is never coming.
+ */
+export function canDeliverOtp(): boolean {
+  return !(smsProvider().exposesCodeToClient && process.env.NODE_ENV === "production");
+}

@@ -16,7 +16,6 @@
     "active": "Active",
     "blocked": "Blocked",
     "inactive": "Inactive",
-    "beta": "Beta — testing in progress",
     "noResults": "Nothing here yet",
     "required": "Required",
     "saved": "Saved",
@@ -63,7 +62,8 @@
     "accountInactive": "This account is not active. Contact your administrator.",
     "notOtpUser": "This account signs in with a password",
     "notPasswordUser": "This account signs in with an OTP",
-    "rateLimited": "Please wait a moment before trying again"
+    "rateLimited": "Please wait a moment before trying again",
+    "otpUndeliverable": "We could not send a code to your mobile. Please ask your administrator to sign you in."
   },
   "home": {
     "greetingMorning": "Good morning, {name}",

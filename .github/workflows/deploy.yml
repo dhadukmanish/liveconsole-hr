@@ -427,8 +427,6 @@ jobs:
           # page on demand, so it does not query the database.
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           DIRECT_DATABASE_URL: ${{ secrets.DIRECT_DATABASE_URL }}
-          # Baked in at build time, so it has to be set here rather than in .env.
-          NEXT_PUBLIC_BETA_BANNER: ${{ vars.BETA_BANNER || 'true' }}
         run: npm run package
 
       - name: Write the .env that ships with the payload

@@ -3,7 +3,6 @@ import { getTranslations } from "next-intl/server";
 import { Card } from "@/components/ui/card";
 import { LanguageSwitcher } from "@/components/language-switcher";
 import { getCurrentUser } from "@/lib/auth/session";
-import { BetaBanner } from "@/components/beta-banner";
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage() {
@@ -12,7 +11,6 @@ export default async function LoginPage() {
 
   return (
     <main className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-4 py-8">
-      <BetaBanner className="mb-4" />
 
       <div className="mb-6 text-center">
         <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-brand text-2xl font-bold text-on-brand">

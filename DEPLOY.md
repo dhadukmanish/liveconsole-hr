@@ -112,7 +112,6 @@ Keys:
 | `DIRECT_DATABASE_URL` | Port **5432**, used only by `prisma migrate`. Migrations cannot run through transaction-mode pooling. |
 | `AUTH_SECRET` | 32+ random bytes. Rotating it signs everyone out. |
 | `UPLOAD_DIR` | `./App_Data/uploads`. Must be writable by the app pool and outside the web root. |
-| `NEXT_PUBLIC_BETA_BANNER` | `"false"` removes the beta banner. This one is baked in at build time, so change it **before** `npm run package`. |
 | `SMS_PROVIDER` | `console` logs OTPs to `logs/`. Switch to `msg91` with the three MSG91 keys when SMS goes live. |
 | `MSG91_REMINDER_TEMPLATE_ID` | A second DLT template, for reminders. Reminders refuse to send over SMS until this is set rather than borrow the OTP template, which the operator never registered for this text. |
 | `CRON_SECRET` | Bearer token for `/api/cron/reminders` and `/api/cron/backup`. The deploy derives one from `AUTH_SECRET` if the repository secret is unset, so rotating `AUTH_SECRET` changes both URLs. |
@@ -323,7 +322,7 @@ back first or the older code may meet columns it does not expect.
 | HTTP 502 / app never starts | Check `logs/`. Usually `.env` missing, or the app pool cannot write to `App_Data/uploads` |
 | "Query engine library for current platform could not be found" | The Windows Prisma engine did not make it into the payload. Confirm `binaryTargets = ["native", "windows"]` in `prisma/schema.prisma`, re-run `npm run package` |
 | Timeouts on first request after idle | Shared hosting spun the process down. `startupTimeLimit` is already 120s; first hit after idle is slow by design |
-| OTP never arrives | `SMS_PROVIDER` is still `console` — the code is in `logs/`, not an SMS |
+| OTP never arrives | `SMS_PROVIDER` is still `console` — the code is in `logs/`, not an SMS. The login screen says so rather than claiming a text was sent, and an administrator can read the code out of the log and pass it on |
 | Every message is `FAILED` with "Template does not exist" | The template names in Meta must match the event names — `leave_applied`, `leave_approved`, `leave_rejected`, `leave_pending`, `task_assigned`, `license_expiry`, `license_expired` — or be mapped with `WHATSAPP_TEMPLATE_<EVENT>`. The language of the approved template must also match `WHATSAPP_TEMPLATE_LANG` |
 | Messages worked yesterday and all fail today | The access token was the dashboard's 24-hour test token. Replace it with a permanent System User token |
 | The Notifications screen says nothing is being sent | Expected until `WHATSAPP_PHONE_NUMBER_ID` and `WHATSAPP_ACCESS_TOKEN` are set; until then the text is in `logs/` |

@@ -6,7 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { createSession, setLocaleCookie } from "@/lib/auth/session";
 import { verifyPassword } from "@/lib/auth/password";
 import { issueOtp, verifyOtp } from "@/lib/auth/otp";
-import { canRevealOtp, smsProvider } from "@/lib/sms";
+import { canDeliverOtp, canRevealOtp, smsProvider } from "@/lib/sms";
 import { rateLimit, resetRateLimit } from "@/lib/rate-limit";
 import { writeAudit } from "@/lib/audit";
 import { mobileSchema, otpSchema } from "@/lib/validation";
@@ -69,6 +69,13 @@ export async function startLogin(
   } catch (error) {
     console.error("[login] OTP delivery failed", error);
     return { step: "mobile", mobile, error: "errors.unexpected" };
+  }
+
+  // The step is still "otp": an administrator can read the code out of the
+  // host's log and pass it on, so the box stays usable. What changes is that we
+  // stop claiming a text was sent when none can arrive.
+  if (!canDeliverOtp()) {
+    return { step: "otp", mobile, error: "auth.otpUndeliverable" };
   }
 
   return {

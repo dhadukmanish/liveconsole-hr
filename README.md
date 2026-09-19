@@ -17,6 +17,9 @@ Built so far:
 
 `BRIEF.md` has the original plan.
 
+Live at **http://task.kriviinfotech.com** (HTTPS once the host issues a
+certificate for the subdomain).
+
 - **Stack** — Next.js 15.5 (App Router, TypeScript, `src/`), Tailwind v4,
   Prisma 6 + PostgreSQL, next-intl (en / hi / gu), PWA via `@ducanh2912/next-pwa`.
 - **Host** — SmarterASP.NET / site4now, Windows shared hosting, IIS +
@@ -126,3 +129,8 @@ server.js        entry point when running from source
 - **Retrying is classified, not blanket.** A rate limit or a Graph 500 is worth
   another go; an unknown template or a number that is not on WhatsApp is not, and
   fails immediately so somebody reads it.
+- **A login screen that cannot send a code says so.** With `SMS_PROVIDER=console`
+  in production the code goes to a log file nobody signing in can read, and
+  "OTP sent to your mobile" would leave them waiting for a text that never
+  comes. The OTP box stays usable — an administrator can read the code out of
+  the log — but the claim is dropped.
