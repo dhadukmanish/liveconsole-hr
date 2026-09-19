@@ -201,6 +201,17 @@ jobs:
           probe /.env "404 403" ".env is not served"
 
           echo
+          echo "=== https ==="
+          # Until the subdomain has a certificate this is a connection reset, and
+          # the session cookie cannot be marked Secure.
+          https_code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 45 "https://$HOST_NAME/login")
+          if [ "$https_code" = "200" ]; then
+            echo "  ok    https serves the app (200) — SESSION_COOKIE_SECURE can be true"
+          else
+            echo "  note  https answered '$https_code' — no certificate yet, so the site is http only"
+          fi
+
+          echo
           echo "=== live, not beta ==="
           # The banner is gone from the code, but what matters is the build the
           # host is actually serving.
@@ -226,6 +237,13 @@ jobs:
               case "$body" in
                 *'"ok":true'*) echo "  ok    $endpoint works" ;;
                 *) echo "  FAIL  $endpoint did not report ok"; failures=$((failures + 1)) ;;
+              esac
+              # Which channel the host is really on is the answer to "is WhatsApp
+              # live?", and it is only visible from the host itself.
+              case "$body" in
+                *'"channel":"whatsapp"'*) echo "  ok    messages go out over WhatsApp" ;;
+                *'"channel":"sms"'*) echo "  note  messages go out over SMS, not WhatsApp" ;;
+                *'"channel":"console"'*) echo "  note  messages are only written to the host log — WhatsApp is not configured" ;;
               esac
             done
           fi
