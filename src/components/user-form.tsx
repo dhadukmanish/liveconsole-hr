@@ -171,7 +171,7 @@ export function UserForm({
           type="checkbox"
           name="whatsappOptOut"
           defaultChecked={defaults.whatsappOptOut ?? false}
-          className="h-5 w-5 rounded border-hairline accent-brand"
+          className="h-6 w-6 shrink-0 rounded border-hairline accent-brand"
         />
         <span>
           {t("notify.optOut")}

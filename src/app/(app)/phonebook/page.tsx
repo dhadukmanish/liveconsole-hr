@@ -91,7 +91,7 @@ export default async function PhonebookPage({
       </form>
 
       {categories.length > 0 ? (
-        <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1">
+        <div className="lc-scroll-hint -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1">
           <Link href={query ? `/phonebook?q=${encodeURIComponent(query)}` : "/phonebook"} className={chip(!category)}>
             {t("phonebook.allCategories")}
           </Link>

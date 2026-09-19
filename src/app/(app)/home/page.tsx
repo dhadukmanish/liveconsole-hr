@@ -128,7 +128,10 @@ export default async function HomePage() {
       <section>
         <div className="mb-2 flex items-center justify-between">
           <h2 className="text-sm font-bold text-muted uppercase">{t("home.myTasks")}</h2>
-          <Link href="/tasks" className="text-sm font-semibold text-brand-ink underline underline-offset-4">
+          <Link
+            href="/tasks"
+            className="-my-1 flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-brand-ink underline underline-offset-4 transition-transform duration-150 active:scale-95"
+          >
             {t("tasks.all")}
           </Link>
         </div>

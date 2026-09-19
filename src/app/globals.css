@@ -144,6 +144,8 @@
   --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
   --motion-fast: 140ms;
   --motion: 200ms;
+  /* The edge shadow on a side-scroller. */
+  --lc-edge: rgb(0 0 0 / 0.13);
 }
 
 @keyframes lc-rise {
@@ -174,6 +176,48 @@
    instead — which is the part the eye actually follows. */
 details[open] > .lc-panel {
   animation: lc-rise var(--motion-fast) var(--ease-out) both;
+}
+
+/**
+ * A shadow at the edge of anything that scrolls sideways, so a table cut off
+ * mid-column reads as "there is more here" rather than as a rendering fault.
+ *
+ * The cover layers are painted `local`, so they travel with the content and
+ * slide away from the edge as you scroll; the shadows are painted `scroll`, so
+ * they stay put. The result is a shadow that appears only on the side there is
+ * still something to reach — and none at all when the content fits. No
+ * JavaScript, no resize observer, nothing to get out of step.
+ */
+.lc-scroll-hint {
+  background:
+    linear-gradient(to right, var(--page) 40%, transparent) left center / 28px 100% no-repeat
+      local,
+    linear-gradient(to left, var(--page) 40%, transparent) right center / 28px 100% no-repeat
+      local,
+    radial-gradient(farthest-side at 0 50%, var(--lc-edge), transparent) left center /
+      12px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, var(--lc-edge), transparent) right center /
+      12px 100% no-repeat scroll;
+}
+
+/* A black shadow on a near-black page is nothing at all, so in dark mode the
+   edge is marked with light instead. */
+.dark .lc-scroll-hint,
+.dark .lc-scroll-hint-card {
+  --lc-edge: rgb(255 255 255 / 0.16);
+}
+
+/* On a card the cover has to match the card, not the page behind it. */
+.lc-scroll-hint-card {
+  background:
+    linear-gradient(to right, var(--card) 40%, transparent) left center / 28px 100% no-repeat
+      local,
+    linear-gradient(to left, var(--card) 40%, transparent) right center / 28px 100% no-repeat
+      local,
+    radial-gradient(farthest-side at 0 50%, var(--lc-edge), transparent) left center /
+      12px 100% no-repeat scroll,
+    radial-gradient(farthest-side at 100% 50%, var(--lc-edge), transparent) right center /
+      12px 100% no-repeat scroll;
 }
 
 /* Respect the OS for users who have not chosen yet: the <html> element gets

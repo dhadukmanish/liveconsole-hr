@@ -39,7 +39,7 @@ export async function TaskCard({ task }: { task: TaskCardData }) {
             </Badge>
           ) : null}
           {task.assigneeName ? (
-            <span className="ml-auto flex h-7 w-7 items-center justify-center rounded-full bg-brand/15 text-[0.625rem] font-bold text-brand-ink">
+            <span className="ml-auto flex h-8 w-8 items-center justify-center rounded-full bg-brand/15 text-[0.6875rem] font-bold text-brand-ink">
               {initials(task.assigneeName)}
             </span>
           ) : null}

@@ -187,7 +187,7 @@ async function AttendanceTable({ user, month }: { user: Actor; month: string }) 
         {t("reports.attendance.absent")}
       </CardMuted>
 
-      <div className="-mx-4 overflow-x-auto px-4">
+      <div className="lc-scroll-hint -mx-4 overflow-x-auto px-4">
         <table className="min-w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-hairline text-left">

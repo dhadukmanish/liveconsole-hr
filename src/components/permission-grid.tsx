@@ -141,7 +141,7 @@ export function RolePermissionGrid({
               <button
                 type="button"
                 onClick={() => toggleModule(moduleName)}
-                className="-my-1 rounded-lg px-2 py-1 text-xs font-semibold text-brand-ink underline underline-offset-4 transition-transform duration-150 active:scale-95"
+                className="-my-2 -mr-2 flex min-h-11 min-w-16 items-center justify-center rounded-lg px-3 text-xs font-semibold text-brand-ink underline underline-offset-4 transition-transform duration-150 active:scale-95"
               >
                 {t("permissions.toggleAll")}
               </button>

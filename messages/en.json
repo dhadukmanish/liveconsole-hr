@@ -191,7 +191,8 @@
     "annualDays": "Days per year",
     "sortOrder": "Order",
     "addItem": "Add",
-    "usedElsewhere": "This is in use and cannot be deleted; deactivate it instead"
+    "usedElsewhere": "This is in use and cannot be deleted; deactivate it instead",
+    "confirmDelete": "Delete {name}? This cannot be undone."
   },
   "errors": {
     "forbidden": "You do not have permission to do that",

@@ -113,7 +113,7 @@ export default async function NotificationsPage({
         </Card>
       ) : null}
 
-      <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1">
+      <div className="lc-scroll-hint -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1">
         <Link href="/notifications" className={chip(!filter)}>
           {t("notify.all")}
         </Link>

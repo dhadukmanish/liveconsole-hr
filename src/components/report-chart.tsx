@@ -123,7 +123,7 @@ function StackedBars({ model, label }: { model: ChartModel; label: string }) {
               x={LABEL_WIDTH - 8}
               y={y + BAR / 2 + 4}
               textAnchor="end"
-              className="fill-ink text-[11px] font-semibold"
+              className="fill-ink text-[12px] font-semibold"
             >
               {row.label.length > 13 ? `${row.label.slice(0, 12)}…` : row.label}
             </text>
@@ -150,7 +150,7 @@ function StackedBars({ model, label }: { model: ChartModel; label: string }) {
             <text
               x={LABEL_WIDTH + total * scale + GAP * row.values.filter((v) => v > 0).length + 6}
               y={y + BAR / 2 + 4}
-              className="fill-muted text-[11px]"
+              className="fill-muted text-[12px]"
             >
               {Number.isInteger(total) ? total : total.toFixed(1)}
             </text>
@@ -235,7 +235,7 @@ function Columns({ model, label }: { model: ChartModel; label: string }) {
                 x={x + columnWidth / 2}
                 y={baseline - barHeight - 5}
                 textAnchor="middle"
-                className="fill-ink text-[10px] font-semibold"
+                className="fill-ink text-[11px] font-semibold"
               >
                 {value}
               </text>
@@ -244,7 +244,7 @@ function Columns({ model, label }: { model: ChartModel; label: string }) {
               x={x + columnWidth / 2}
               y={baseline + 13}
               textAnchor="middle"
-              className={columnWidth < 14 ? "fill-muted text-[8px]" : "fill-muted text-[9px]"}
+              className={columnWidth < 14 ? "fill-muted text-[9px]" : "fill-muted text-[10px]"}
             >
               {row.label}
             </text>

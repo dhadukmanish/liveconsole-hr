@@ -51,7 +51,7 @@ export default async function SettingsPage({
     <>
       <PageHeader title={t("settings.title")} />
 
-      <nav className="mb-4 -mx-4 flex gap-2 overflow-x-auto px-4">
+      <nav className="lc-scroll-hint mb-4 -mx-4 flex gap-2 overflow-x-auto px-4">
         {TABS.map((entry) => (
           <Link
             key={entry.kind}

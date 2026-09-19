@@ -25,6 +25,9 @@ const STATUS_TONE = {
   INACTIVE: "neutral",
 } as const;
 
+const SUBLINK =
+  "flex min-h-12 items-center rounded-xl border border-hairline bg-card px-4 text-brand-ink transition-[border-color,transform] duration-150 hover:border-brand active:scale-[0.97]";
+
 export default async function UserDetailPage({
   params,
 }: {
@@ -75,17 +78,16 @@ export default async function UserDetailPage({
         }
       />
 
+      {/* These go to other screens, so they are navigation, not prose: as
+          underlined text they were a 20px-tall target on a touch screen. */}
       <div className="mb-4 flex flex-wrap gap-2 text-sm font-semibold">
         {can(actor, "DOCUMENTS", "VIEW") ? (
-          <Link href={`/documents/${target.id}`} className="text-brand-hover dark:text-brand underline underline-offset-4">
+          <Link href={`/documents/${target.id}`} className={SUBLINK}>
             {t("documents.title")}
           </Link>
         ) : null}
         {actor.isSuperAdmin ? (
-          <Link
-            href={`/permissions/user/${target.id}`}
-            className="text-brand-hover dark:text-brand underline underline-offset-4"
-          >
+          <Link href={`/permissions/user/${target.id}`} className={SUBLINK}>
             {t("permissions.userOverrides")}
           </Link>
         ) : null}

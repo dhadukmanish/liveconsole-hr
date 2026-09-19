@@ -86,11 +86,11 @@ export function ApplyLeaveForm({
       </div>
 
       {sameDay ? (
-        <label className="mb-4 flex items-center gap-2 text-sm text-ink">
+        <label className="mb-4 flex min-h-12 items-center gap-3 text-sm text-ink">
           <input
             type="checkbox"
             name="isHalfDay"
-            className="h-5 w-5 accent-[var(--brand)]"
+            className="h-6 w-6 shrink-0 accent-[var(--brand)]"
           />
           {t("leave.halfDay")}
         </label>
