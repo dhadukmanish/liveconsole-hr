@@ -101,6 +101,10 @@ which of the three you are getting, so there is no guessing.
 The period is in the address, so a link to September's attendance is a link you
 can send to somebody.
 
+Each report opens with a chart — days per person, leave by type, work per person,
+and which month each licence falls due in. The same chart is in the PDF, so a
+printed copy shows what the screen showed.
+
 ---
 
 ## Once: the three scheduled jobs
