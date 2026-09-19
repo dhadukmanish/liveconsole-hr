@@ -89,6 +89,20 @@ A push **without** `[deploy]` builds nothing and changes nothing on the host.
 
 ---
 
+## Reports
+
+**More → Reports** on any phone. Four of them — attendance register, leave
+register, task summary and licence list — each with a **Download PDF** button.
+
+Who sees what follows the same rule as the rest of the app: an employee sees
+their own rows, an admin their team's, a super admin everybody's. The screen says
+which of the three you are getting, so there is no guessing.
+
+The period is in the address, so a link to September's attendance is a link you
+can send to somebody.
+
+---
+
 ## Once: the three scheduled jobs
 
 The host has no scheduler of its own, so nothing reminds anybody, nothing gets
