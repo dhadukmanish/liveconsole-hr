@@ -46,6 +46,7 @@ Same page, **Variables** tab → **New repository variable**:
 | `FTP_REMOTE` | leave unset at first | set it only if the site is not at the FTP root |
 | `SESSION_COOKIE_SECURE` | `false` | set to `true` once HTTPS works |
 | `NOTIFY_CHANNEL` | leave unset | `whatsapp`, `sms` or `console`; unset works it out from what is configured |
+| `OTP_CHANNEL` | leave unset | `whatsapp` or `sms` for login codes; unset prefers WhatsApp and falls back to SMS |
 | `WHATSAPP_TEMPLATE_LANG` | `en` | set to `hi` or `gu` if your approved templates are in that language |
 
 Variables are visible in logs; secrets are masked. That is why the password and
@@ -140,6 +141,9 @@ templates that Meta has approved in advance, so:
 2. In WhatsApp Manager → Message templates, add one Utility template per event.
    The names and the numbered placeholders are listed in `DEPLOY.md` section 8 —
    the wording is yours, the placeholder order is not.
+   Add one more, category **Authentication**, named `login_code`, with a **Copy
+   code** button: that is the one that sends login codes, and Meta keeps those in
+   their own category.
 3. Add `WHATSAPP_PHONE_NUMBER_ID` and `WHATSAPP_ACCESS_TOKEN` as repository
    secrets and deploy. Use a **permanent** token: the one the dashboard shows
    first expires in 24 hours.

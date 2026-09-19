@@ -44,6 +44,7 @@
     "sendOtp": "OTP મોકલો",
     "verifyOtp": "OTP તપાસો",
     "otpSent": "તમારા મોબાઇલ પર OTP મોકલ્યો",
+    "otpSentWhatsapp": "કોડ વોટ્સએપ પર મોકલ્યો",
     "otpHint": "6 અંકનો કોડ નાખો",
     "devOtpBanner": "DEV OTP: {code}",
     "resendOtp": "OTP ફરી મોકલો",

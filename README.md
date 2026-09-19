@@ -25,7 +25,7 @@ The app runs without these; each one leaves a hole until it is done.
 
 | Outstanding | What does not work until then |
 | --- | --- |
-| `SMS_PROVIDER=msg91` + the MSG91 keys | Anybody whose login method is OTP cannot sign in on their own — the code goes to `logs/` on the host, and the login screen says so instead of pretending a text was sent |
+| WhatsApp credentials, **or** `SMS_PROVIDER=msg91` + the MSG91 keys | Anybody whose login method is OTP cannot sign in on their own — the code goes to `logs/` on the host, and the login screen says so instead of pretending a message was sent. WhatsApp is tried first when configured; SMS still matters as the fallback for numbers that are not on WhatsApp |
 | SSL for the subdomain, then `SESSION_COOKIE_SECURE=true` | The site is HTTP only, so the session cookie cannot be marked `Secure` |
 | Three cron-job.org jobs (`notifications`, `reminders`, `backup`) | Nothing is delivered, nothing is reminded and nothing is backed up; messages simply queue |
 | WhatsApp templates approved by Meta + the two `WHATSAPP_*` secrets | Notifications queue and show in the delivery log but are written to `logs/` rather than sent |
@@ -147,3 +147,9 @@ server.js        entry point when running from source
   "OTP sent to your mobile" would leave them waiting for a text that never
   comes. The OTP box stays usable — an administrator can read the code out of
   the log — but the claim is dropped.
+- **A login code does not go through the outbox.** Everything else is queued and
+  drained by cron; a code drained a quarter of an hour later has expired, so the
+  login path sends it there and then. It prefers WhatsApp, falls back to SMS on
+  any failure — including the common one where the number simply is not on
+  WhatsApp, which Meta only tells you when you try — and the screen says which
+  route it took.

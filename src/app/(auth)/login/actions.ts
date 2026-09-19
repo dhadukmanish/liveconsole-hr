@@ -6,7 +6,8 @@ import { prisma } from "@/lib/prisma";
 import { createSession, setLocaleCookie } from "@/lib/auth/session";
 import { verifyPassword } from "@/lib/auth/password";
 import { issueOtp, verifyOtp } from "@/lib/auth/otp";
-import { canDeliverOtp, canRevealOtp, smsProvider } from "@/lib/sms";
+import { canRevealOtp } from "@/lib/sms";
+import { deliverOtp } from "@/lib/otp-delivery";
 import { rateLimit, resetRateLimit } from "@/lib/rate-limit";
 import { writeAudit } from "@/lib/audit";
 import { mobileSchema, otpSchema } from "@/lib/validation";
@@ -64,24 +65,27 @@ export async function startLogin(
     return { step: "otp", mobile, error: "auth.rateLimited" };
   }
 
+  let delivery;
   try {
-    await smsProvider().sendOtp(mobile, issued.code);
+    delivery = await deliverOtp(mobile, issued.code);
   } catch (error) {
     console.error("[login] OTP delivery failed", error);
     return { step: "mobile", mobile, error: "errors.unexpected" };
   }
 
-  // The step is still "otp": an administrator can read the code out of the
-  // host's log and pass it on, so the box stays usable. What changes is that we
-  // stop claiming a text was sent when none can arrive.
-  if (!canDeliverOtp()) {
+  // The step is still "otp" even when nothing could be delivered: an
+  // administrator can read the code out of the host's log and pass it on, so the
+  // box stays usable. What we stop doing is claiming a message was sent.
+  if (!delivery.delivered) {
     return { step: "otp", mobile, error: "auth.otpUndeliverable" };
   }
 
   return {
     step: "otp",
     mobile,
-    notice: "auth.otpSent",
+    // Says where to look, because "check your phone" is not much help when the
+    // code could have come by either route.
+    notice: delivery.via === "whatsapp" ? "auth.otpSentWhatsapp" : "auth.otpSent",
     devOtp: canRevealOtp() ? issued.code : undefined,
   };
 }

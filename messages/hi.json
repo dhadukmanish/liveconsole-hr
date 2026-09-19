@@ -44,6 +44,7 @@
     "sendOtp": "OTP भेजें",
     "verifyOtp": "OTP जाँचें",
     "otpSent": "आपके मोबाइल पर OTP भेजा गया",
+    "otpSentWhatsapp": "कोड व्हाट्सएप पर भेजा गया",
     "otpHint": "6 अंकों का कोड डालें",
     "devOtpBanner": "DEV OTP: {code}",
     "resendOtp": "OTP फिर भेजें",

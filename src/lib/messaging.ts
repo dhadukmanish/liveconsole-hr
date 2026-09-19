@@ -80,86 +80,156 @@ function templateNameFor(template: string): string {
   return override && override.trim() !== "" ? override.trim() : template;
 }
 
+/** True when the Cloud API has what it needs to send anything at all. */
+export function whatsappConfigured(): boolean {
+  return Boolean(process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID);
+}
+
+/**
+ * One place that talks to Graph, so the OTP send and the notification send
+ * cannot drift apart on version, timeout or error classification.
+ */
+async function postToGraph(body: unknown): Promise<{ providerRef?: string }> {
+  const token = process.env.WHATSAPP_ACCESS_TOKEN;
+  const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
+  if (!token || !phoneNumberId) {
+    // Config, not delivery: retry once somebody sets it, do not discard.
+    throw new SendError(
+      "WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID must be set",
+      false,
+    );
+  }
+
+  const version = process.env.WHATSAPP_API_VERSION ?? "v21.0";
+  // Overridable so the login path can be exercised against a stub; production
+  // never sets it.
+  const base = process.env.WHATSAPP_API_BASE ?? "https://graph.facebook.com";
+
+  let response: Response;
+  try {
+    response = await fetch(
+      `${base}/${version}/${phoneNumberId}/messages`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+        // Graph occasionally hangs. The cron run that drains the outbox has to
+        // end, and somebody waiting on a login code will not wait forever.
+        signal: AbortSignal.timeout(20_000),
+      },
+    );
+  } catch (error) {
+    throw new SendError(
+      `could not reach Graph: ${error instanceof Error ? error.message : "unknown"}`,
+      false,
+    );
+  }
+
+  const text = await response.text();
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    parsed = null;
+  }
+
+  if (!response.ok) {
+    const metaError = (parsed as { error?: { message?: string; code?: number } } | null)?.error;
+    const code = metaError?.code;
+    throw new SendError(
+      `Graph ${response.status}${code ? ` (${code})` : ""}: ${
+        metaError?.message ?? text.slice(0, 200)
+      }`,
+      code !== undefined && PERMANENT_META_CODES.has(code),
+    );
+  }
+
+  return {
+    providerRef: (parsed as { messages?: { id?: string }[] } | null)?.messages?.[0]?.id,
+  };
+}
+
+/**
+ * A login code over WhatsApp. Meta puts these in their own "authentication"
+ * template category, with the code as the single body parameter and a button
+ * that lets the person copy it without retyping — so this cannot reuse the
+ * notification path, which sends utility templates with no buttons.
+ *
+ * WHATSAPP_OTP_BUTTON matches whatever was approved: copy_code (the default and
+ * the easiest to get approved), url for one-tap autofill, or none.
+ */
+export async function sendWhatsAppOtp(mobile: string, code: string): Promise<{ providerRef?: string }> {
+  const to = toWhatsAppNumber(mobile);
+  if (!to) throw new SendError(`${mobile} cannot be a WhatsApp number`, true);
+
+  const language = process.env.WHATSAPP_TEMPLATE_LANG ?? "en";
+  const button = (process.env.WHATSAPP_OTP_BUTTON ?? "copy_code").toLowerCase();
+
+  const components: unknown[] = [
+    { type: "body", parameters: [{ type: "text", text: code }] },
+  ];
+
+  // The code goes into the button too: that is what makes copy and one-tap work.
+  if (button === "copy_code") {
+    components.push({
+      type: "button",
+      sub_type: "copy_code",
+      index: "0",
+      parameters: [{ type: "coupon_code", coupon_code: code }],
+    });
+  } else if (button === "url") {
+    components.push({
+      type: "button",
+      sub_type: "url",
+      index: "0",
+      parameters: [{ type: "text", text: code }],
+    });
+  }
+
+  return postToGraph({
+    messaging_product: "whatsapp",
+    recipient_type: "individual",
+    to,
+    type: "template",
+    template: {
+      name: process.env.WHATSAPP_OTP_TEMPLATE?.trim() || "login_code",
+      language: { code: language },
+      components,
+    },
+  });
+}
+
 const whatsappChannel: MessageChannel = {
   name: "whatsapp",
   async send(message) {
-    const token = process.env.WHATSAPP_ACCESS_TOKEN;
-    const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
-    if (!token || !phoneNumberId) {
-      // Config, not delivery: retry once somebody sets it, do not discard.
-      throw new SendError(
-        "WHATSAPP_ACCESS_TOKEN and WHATSAPP_PHONE_NUMBER_ID must be set",
-        false,
-      );
-    }
-
     const to = toWhatsAppNumber(message.toMobile);
     if (!to) {
       // No amount of retrying turns a landline into a WhatsApp number.
       throw new SendError(`${message.toMobile} cannot be a WhatsApp number`, true);
     }
 
-    const version = process.env.WHATSAPP_API_VERSION ?? "v21.0";
     const language = process.env.WHATSAPP_TEMPLATE_LANG ?? "en";
 
-    let response: Response;
-    try {
-      response = await fetch(
-        `https://graph.facebook.com/${version}/${phoneNumberId}/messages`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
+    const { providerRef } = await postToGraph({
+      messaging_product: "whatsapp",
+      recipient_type: "individual",
+      to,
+      type: "template",
+      template: {
+        name: templateNameFor(message.template),
+        language: { code: language },
+        components: [
+          {
+            type: "body",
+            parameters: message.params.map((text) => ({ type: "text", text })),
           },
-          body: JSON.stringify({
-            messaging_product: "whatsapp",
-            recipient_type: "individual",
-            to,
-            type: "template",
-            template: {
-              name: templateNameFor(message.template),
-              language: { code: language },
-              components: [
-                {
-                  type: "body",
-                  parameters: message.params.map((text) => ({ type: "text", text })),
-                },
-              ],
-            },
-          }),
-          // The cron call that drains the outbox has to end; Graph occasionally
-          // hangs, and a hung fetch would hold the whole run open.
-          signal: AbortSignal.timeout(20_000),
-        },
-      );
-    } catch (error) {
-      throw new SendError(
-        `could not reach Graph: ${error instanceof Error ? error.message : "unknown"}`,
-        false,
-      );
-    }
+        ],
+      },
+    });
 
-    const text = await response.text();
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(text);
-    } catch {
-      parsed = null;
-    }
-
-    if (!response.ok) {
-      const metaError = (parsed as { error?: { message?: string; code?: number } } | null)?.error;
-      const code = metaError?.code;
-      throw new SendError(
-        `Graph ${response.status}${code ? ` (${code})` : ""}: ${
-          metaError?.message ?? text.slice(0, 200)
-        }`,
-        code !== undefined && PERMANENT_META_CODES.has(code),
-      );
-    }
-
-    const providerRef = (parsed as { messages?: { id?: string }[] } | null)?.messages?.[0]?.id;
     return { providerRef, detail: "accepted by WhatsApp Cloud API" };
   },
 };

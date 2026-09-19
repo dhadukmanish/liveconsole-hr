@@ -44,6 +44,7 @@
     "sendOtp": "Send OTP",
     "verifyOtp": "Verify OTP",
     "otpSent": "OTP sent to your mobile",
+    "otpSentWhatsapp": "Code sent on WhatsApp",
     "otpHint": "Enter the 6-digit code",
     "devOtpBanner": "DEV OTP: {code}",
     "resendOtp": "Resend OTP",

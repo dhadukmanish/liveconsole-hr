@@ -121,6 +121,9 @@ Keys:
 | `WHATSAPP_ACCESS_TOKEN` | A **permanent** System User token. The test token in the dashboard expires in 24 hours, so sending would stop working tomorrow. |
 | `WHATSAPP_API_VERSION` | Graph version, default `v21.0`. |
 | `WHATSAPP_TEMPLATE_LANG` | Language code of the approved templates, default `en`. |
+| `OTP_CHANNEL` | `whatsapp` or `sms` for login codes. Unset prefers WhatsApp when it is configured, and falls back to SMS whenever WhatsApp cannot reach the number. |
+| `WHATSAPP_OTP_TEMPLATE` | The **authentication**-category template for login codes, default `login_code`. |
+| `WHATSAPP_OTP_BUTTON` | Which button that template was approved with: `copy_code` (default), `url` for one-tap autofill, or `none`. |
 
 ## 5. Database migrations
 
@@ -275,12 +278,26 @@ be used. That approval is the one part of this nobody can automate.
 
    The parameter order matters and is fixed by the code. A different wording is
    fine; a different number or order of placeholders is not.
-3. Put the phone number id and a permanent access token in the repository
+3. For login codes, add one more template — category **Authentication**, named
+   `login_code`, with the code as its single variable and a **Copy code**
+   button. Meta keeps login codes in their own category, so this cannot be one
+   of the Utility templates above. If it is approved with one-tap autofill
+   instead, set the `WHATSAPP_OTP_BUTTON` variable to `url`; with no button at
+   all, `none`.
+4. Put the phone number id and a permanent access token in the repository
    secrets, then deploy.
 
 Until that is done the app still works: every message is queued, the
 Notifications screen shows it, and the text is written to `logs/`. Turning
 WhatsApp on later sends only what is still queued, not the whole history.
+
+**Login codes are the exception to the queue.** They are sent the moment
+somebody asks for one — a code drained by a cron job a quarter of an hour later
+has already expired. If WhatsApp cannot reach that number, or fails for any
+other reason, the code goes out over SMS instead and the login screen says which
+route it took. That fallback means `SMS_PROVIDER` still matters even once
+WhatsApp is live: without it, anybody whose number is not on WhatsApp cannot
+sign in on their own.
 
 If a template is approved in Hindi or Gujarati instead of English, set the
 `WHATSAPP_TEMPLATE_LANG` variable to match — Meta selects the template by
@@ -322,6 +339,7 @@ back first or the older code may meet columns it does not expect.
 | HTTP 502 / app never starts | Check `logs/`. Usually `.env` missing, or the app pool cannot write to `App_Data/uploads` |
 | "Query engine library for current platform could not be found" | The Windows Prisma engine did not make it into the payload. Confirm `binaryTargets = ["native", "windows"]` in `prisma/schema.prisma`, re-run `npm run package` |
 | Timeouts on first request after idle | Shared hosting spun the process down. `startupTimeLimit` is already 120s; first hit after idle is slow by design |
+| Login codes fail with "Template does not exist" | `login_code` must be an **Authentication**-category template, not Utility, and `WHATSAPP_OTP_BUTTON` must match the button it was approved with |
 | OTP never arrives | `SMS_PROVIDER` is still `console` — the code is in `logs/`, not an SMS. The login screen says so rather than claiming a text was sent, and an administrator can read the code out of the log and pass it on |
 | Every message is `FAILED` with "Template does not exist" | The template names in Meta must match the event names — `leave_applied`, `leave_approved`, `leave_rejected`, `leave_pending`, `task_assigned`, `license_expiry`, `license_expired` — or be mapped with `WHATSAPP_TEMPLATE_<EVENT>`. The language of the approved template must also match `WHATSAPP_TEMPLATE_LANG` |
 | Messages worked yesterday and all fail today | The access token was the dashboard's 24-hour test token. Replace it with a permanent System User token |

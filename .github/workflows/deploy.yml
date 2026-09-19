@@ -457,6 +457,9 @@ jobs:
           WHATSAPP_ACCESS_TOKEN: ${{ secrets.WHATSAPP_ACCESS_TOKEN }}
           WHATSAPP_API_VERSION: ${{ vars.WHATSAPP_API_VERSION }}
           WHATSAPP_TEMPLATE_LANG: ${{ vars.WHATSAPP_TEMPLATE_LANG }}
+          OTP_CHANNEL: ${{ vars.OTP_CHANNEL }}
+          WHATSAPP_OTP_TEMPLATE: ${{ vars.WHATSAPP_OTP_TEMPLATE }}
+          WHATSAPP_OTP_BUTTON: ${{ vars.WHATSAPP_OTP_BUTTON }}
         run: |
           # Written with printf from the environment so no secret is ever echoed
           # into the log. GitHub masks secrets, but not printing them is better.
@@ -483,6 +486,9 @@ jobs:
             printf 'WHATSAPP_ACCESS_TOKEN="%s"\n' "$WHATSAPP_ACCESS_TOKEN"
             printf 'WHATSAPP_API_VERSION="%s"\n' "${WHATSAPP_API_VERSION:-v21.0}"
             printf 'WHATSAPP_TEMPLATE_LANG="%s"\n' "${WHATSAPP_TEMPLATE_LANG:-en}"
+            printf 'OTP_CHANNEL="%s"\n' "$OTP_CHANNEL"
+            printf 'WHATSAPP_OTP_TEMPLATE="%s"\n' "${WHATSAPP_OTP_TEMPLATE:-login_code}"
+            printf 'WHATSAPP_OTP_BUTTON="%s"\n' "${WHATSAPP_OTP_BUTTON:-copy_code}"
           } > deploy-payload/.env
           chmod 600 deploy-payload/.env
           echo "Wrote deploy-payload/.env ($(wc -l < deploy-payload/.env) lines)"
