@@ -17,8 +17,21 @@ Built so far:
 
 `BRIEF.md` has the original plan.
 
-Live at **http://task.kriviinfotech.com** (HTTPS once the host issues a
-certificate for the subdomain).
+Live at **http://task.kriviinfotech.com**.
+
+### What is still waiting on the operator
+
+The app runs without these; each one leaves a hole until it is done.
+
+| Outstanding | What does not work until then |
+| --- | --- |
+| `SMS_PROVIDER=msg91` + the MSG91 keys | Anybody whose login method is OTP cannot sign in on their own — the code goes to `logs/` on the host, and the login screen says so instead of pretending a text was sent |
+| SSL for the subdomain, then `SESSION_COOKIE_SECURE=true` | The site is HTTP only, so the session cookie cannot be marked `Secure` |
+| Three cron-job.org jobs (`notifications`, `reminders`, `backup`) | Nothing is delivered, nothing is reminded and nothing is backed up; messages simply queue |
+| WhatsApp templates approved by Meta + the two `WHATSAPP_*` secrets | Notifications queue and show in the delivery log but are written to `logs/` rather than sent |
+
+`DEPLOY.md` has the detail for each; `SETUP-FROM-PHONE.md` has the versions that
+can be done from a phone.
 
 - **Stack** — Next.js 15.5 (App Router, TypeScript, `src/`), Tailwind v4,
   Prisma 6 + PostgreSQL, next-intl (en / hi / gu), PWA via `@ducanh2912/next-pwa`.
