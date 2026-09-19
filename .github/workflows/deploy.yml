@@ -214,6 +214,28 @@ jobs:
           fi
 
           echo
+          echo "=== is the build on the host this commit? ==="
+          # "It deployed" and "the phone is looking at it" are different claims,
+          # and until now only the first was ever checked. The dark theme's
+          # brand ink is a value that changes whenever the stylesheet does, so
+          # finding it in the CSS the site is actually serving says the payload
+          # on the host was built from this source — not from a fortnight ago.
+          want=$(awk '/^\.dark \{/,/^\}/' src/app/globals.css \
+            | grep -o -- '--brand-ink: #[0-9a-f]*' | head -1 | tr -d '#' | awk '{print $2}')
+          css=$(curl -s --max-time 45 "$base/login" \
+            | grep -o '/_next/static/css/[^"]*\.css' | head -1)
+          if [ -z "$want" ] || [ -z "$css" ]; then
+            echo "  FAIL  could not find a stylesheet to compare (want='$want' css='$css')"
+            failures=$((failures + 1))
+          elif curl -s --max-time 45 "$base$css" | grep -qi "$want"; then
+            echo "  ok    the live stylesheet is built from this commit ($css)"
+          else
+            echo "  FAIL  the live stylesheet is an older build — it does not contain $want"
+            echo "        served: $css"
+            failures=$((failures + 1))
+          fi
+
+          echo
           echo "=== live, not beta ==="
           # The banner is gone from the code, but what matters is the build the
           # host is actually serving.
