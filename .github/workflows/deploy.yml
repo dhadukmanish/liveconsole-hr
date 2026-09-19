@@ -157,25 +157,29 @@ jobs:
           probe /tasks "307 302" "tasks require a session"
           # The cron routes are public URLs; the token is all that guards them.
           probe /api/cron/reminders 401 "reminders refuse an unauthenticated call"
+          probe /api/cron/notifications 401 "the message queue refuses an unauthenticated call"
           probe /api/cron/backup 401 "backup refuses an unauthenticated call"
           probe "/api/cron/reminders?token=wrong" 401 "reminders refuse a wrong token"
           # .env sits at the site root and must never be readable over HTTP.
           probe /.env "404 403" ".env is not served"
 
           echo
-          echo "=== the reminder run itself ==="
+          echo "=== the scheduled runs themselves ==="
           token=$(bash scripts/cron-token.sh)
           if [ -z "$token" ]; then
             echo "  skipped: neither CRON_SECRET nor AUTH_SECRET is set"
           else
-            # Safe to call: idempotent per India-local day, and nothing is texted
-            # while SMS_PROVIDER is console.
-            body=$(curl -s --max-time 60 "$base/api/cron/reminders?token=$token")
-            echo "  response: ${body:0:300}"
-            case "$body" in
-              *'"ok":true'*) echo "  ok    the scheduler URL works" ;;
-              *) echo "  FAIL  the scheduler URL did not report ok"; failures=$((failures + 1)) ;;
-            esac
+            # Safe to call: the reminder run is idempotent per India-local day,
+            # and the flush only sends what is already queued — to the server log
+            # while no WhatsApp credentials are set.
+            for endpoint in reminders notifications; do
+              body=$(curl -s --max-time 60 "$base/api/cron/$endpoint?token=$token")
+              echo "  $endpoint: ${body:0:250}"
+              case "$body" in
+                *'"ok":true'*) echo "  ok    $endpoint works" ;;
+                *) echo "  FAIL  $endpoint did not report ok"; failures=$((failures + 1)) ;;
+              esac
+            done
           fi
 
           echo
