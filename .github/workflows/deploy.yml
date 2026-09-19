@@ -201,6 +201,17 @@ jobs:
           probe /.env "404 403" ".env is not served"
 
           echo
+          echo "=== live, not beta ==="
+          # The banner is gone from the code, but what matters is the build the
+          # host is actually serving.
+          if curl -s --max-time 45 "$base/login" | grep -q "testing in progress"; then
+            echo "  FAIL  the host is still serving the beta banner"
+            failures=$((failures + 1))
+          else
+            echo "  ok    no beta banner on the live login page"
+          fi
+
+          echo
           echo "=== the scheduled runs themselves ==="
           token=$(bash scripts/cron-token.sh)
           if [ -z "$token" ]; then
