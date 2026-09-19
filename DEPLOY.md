@@ -178,9 +178,10 @@ recorded, so it is retried on the next run.
 
 To set it up:
 
-1. Push a commit whose **subject** contains `[cron-url]`. The workflow prints
-   the full URL, token included, into that run's summary. (It is in the run
-   summary rather than anywhere public because the token is in the URL.)
+1. Push a commit whose **subject** contains `[cron-url]`, or run the workflow by
+   hand from the Actions tab. It prints all three URLs, tokens included, into
+   that run's summary — there rather than anywhere public, because the token is
+   in the URL.
 2. At [cron-job.org](https://cron-job.org) create a job: that URL, method GET,
    once a day at 09:00 **Asia/Kolkata**, and enable failure notifications.
 3. Run it once by hand and check the response. `{"ok":true,...}` is the
@@ -339,7 +340,7 @@ debugging. Two commit-message markers avoid it:
   reports what the site returns over http and https. About forty seconds.
 - `[handler]` — swaps only `web.config` and probes after each variant, for
   when the failure is IIS-side rather than in the app.
-- `[cron-url]` — prints the daily reminder URL into the run summary.
+- `[cron-url]` — prints all three scheduled-job URLs into the run summary.
 - `[reset-admin]` — resets the SUPERADMIN password from the repository secret.
 
 Only the jobs that write to the host are serialised, and only against each

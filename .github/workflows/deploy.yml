@@ -326,9 +326,9 @@ jobs:
           npm run db:reset-admin
 
   cron-url:
-    # Prints the reminder URL to paste into cron-job.org. It carries the bearer
-    # token, so it goes into this run's summary (visible to people who can see
-    # the repository) rather than anywhere more public.
+    # Prints the scheduled-job URLs to paste into cron-job.org. They carry the
+    # bearer token, so they go into this run's summary (visible to people who can
+    # see the repository) rather than anywhere more public.
     needs: gate
     if: needs.gate.outputs.cronurl == 'true'
     runs-on: ubuntu-latest
@@ -342,16 +342,33 @@ jobs:
         run: |
           token=$(bash scripts/cron-token.sh)
           {
-            echo "### Daily reminder URL"
+            echo "### Scheduled job URLs"
             echo
-            echo "Schedule this once a day at cron-job.org (method GET):"
+            echo "Add these at cron-job.org, method GET. They carry the token, so"
+            echo "treat them like passwords."
+            echo
+            echo "**Messages — every 15 minutes.** This is the one that actually"
+            echo "sends: approvals, assignments and reminders are queued by the app"
+            echo "and go out from here."
+            echo
+            echo '```'
+            echo "$SITE_URL/api/cron/notifications?token=$token"
+            echo '```'
+            echo
+            echo "**Reminders — daily, 09:00 Asia/Kolkata.** Queues licence"
+            echo "renewals and leave that has been waiting. Safe to call twice: the"
+            echo "second call the same day queues nothing."
             echo
             echo '```'
             echo "$SITE_URL/api/cron/reminders?token=$token"
             echo '```'
             echo
-            echo "It is safe to call more than once a day: the second call the"
-            echo "same day sends nothing."
+            echo "**Backup — weekly, Sunday 02:00.** Writes a JSON snapshot into"
+            echo "App_Data/backups on the host; collect them over FTP."
+            echo
+            echo '```'
+            echo "$SITE_URL/api/cron/backup?token=$token"
+            echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
           echo "URL written to the run summary."
 
