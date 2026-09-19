@@ -154,7 +154,7 @@ else in the app is reachable.
 
 ## 6. Verify
 
-1. `https://task.kriviinfotech.com/login` loads with the beta banner.
+1. `https://task.kriviinfotech.com/login` loads.
 2. Sign in as the SUPERADMIN → forced password change → Home.
 3. Create a user, upload a document, download the ID card PDF.
 4. Chrome on Android → menu → **Add to home screen** should offer to install.
