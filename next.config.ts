@@ -1,3 +1,4 @@
+import { execSync } from "node:child_process";
 import type { NextConfig } from "next";
 import withPWAInit from "@ducanh2912/next-pwa";
 import createNextIntlPlugin from "next-intl/plugin";
@@ -47,7 +48,34 @@ const withPWA = withPWAInit({
   },
 });
 
+/**
+ * Which build this is, decided once at build time and inlined. Not read from
+ * the environment at runtime: the whole point is to answer "is the payload on
+ * this phone the one that was just deployed?", and a value the host could set
+ * separately from the files it serves would not answer that.
+ */
+function buildStamp(): { sha: string; at: string } {
+  const sha =
+    process.env.GITHUB_SHA ??
+    (() => {
+      try {
+        return execSync("git rev-parse HEAD", { stdio: ["ignore", "pipe", "ignore"] })
+          .toString()
+          .trim();
+      } catch {
+        return "";
+      }
+    })();
+  return { sha: sha ? sha.slice(0, 7) : "dev", at: new Date().toISOString() };
+}
+
+const build = buildStamp();
+
 const nextConfig: NextConfig = {
+  env: {
+    NEXT_PUBLIC_BUILD_SHA: build.sha,
+    NEXT_PUBLIC_BUILD_AT: build.at,
+  },
   // Required for the SmarterASP deploy: emits .next/standalone with only the
   // traced runtime deps, so we never ship a Linux-built node_modules to Windows.
   output: "standalone",

@@ -22,6 +22,8 @@ import { ThemeSwitcher } from "@/components/theme-switcher";
 import { initials } from "@/lib/utils";
 import { requireUser } from "@/lib/auth/guard";
 import { can } from "@/lib/auth/session";
+import { formatDateTimeIst } from "@/lib/workday";
+import { BuildStamp } from "@/components/build-stamp";
 
 const ROW =
   "flex min-h-14 items-center gap-3 border-b border-hairline px-1 text-sm font-semibold text-ink last:border-0";
@@ -124,6 +126,16 @@ export default async function MorePage() {
       </Card>
 
       <SignOutButton />
+
+      {/* Which build this device is running. Rendered from the value inlined at
+          build time, so it describes the payload the phone actually loaded. */}
+      <BuildStamp
+        label={`${process.env.NEXT_PUBLIC_BUILD_SHA ?? "dev"} · ${
+          process.env.NEXT_PUBLIC_BUILD_AT
+            ? formatDateTimeIst(new Date(process.env.NEXT_PUBLIC_BUILD_AT))
+            : "—"
+        }`}
+      />
     </>
   );
 }

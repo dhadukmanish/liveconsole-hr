@@ -100,7 +100,8 @@
     "themeLight": "उजला",
     "themeDark": "गहरा",
     "themeSystem": "सिस्टम",
-    "admin": "प्रबंधन"
+    "admin": "प्रबंधन",
+    "update": "अपडेट"
   },
   "users": {
     "title": "उपयोगकर्ता",

@@ -100,7 +100,8 @@
     "themeLight": "Light",
     "themeDark": "Dark",
     "themeSystem": "System",
-    "admin": "Administration"
+    "admin": "Administration",
+    "update": "Update"
   },
   "users": {
     "title": "Users",
