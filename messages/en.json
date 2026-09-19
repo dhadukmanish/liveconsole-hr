@@ -427,7 +427,10 @@
       "cost": "Cost",
       "expired": "expired",
       "total": "Total",
-      "asAt": "All active licences"
-    }
+      "asAt": "All active licences",
+      "dueByMonth": "Due by month"
+    },
+    "others": "Others",
+    "chart": "At a glance"
   }
 }

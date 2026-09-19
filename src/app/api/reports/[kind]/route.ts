@@ -4,6 +4,12 @@ import type { PermissionAction, PermissionModule } from "@prisma/client";
 import { can, getCurrentUser } from "@/lib/auth/session";
 import { buildReportPdf } from "@/lib/report-pdf";
 import {
+  attendanceChart,
+  leaveChart,
+  licenseChart,
+  taskChart,
+} from "@/lib/chart-model";
+import {
   attendanceSpec,
   leaveSpec,
   licenseSpec,
@@ -67,6 +73,13 @@ export async function GET(
   if (kind === "attendance") {
     const month = url.searchParams.get("month") ?? toMonthInput(workDateFor());
     const report = await attendanceReport(actor, month);
+    const chart = attendanceChart(report, {
+      present: t("reports.attendance.present"),
+      halfDay: t("reports.attendance.halfDay"),
+      onLeave: t("reports.attendance.onLeave"),
+      absent: t("reports.attendance.absent"),
+      other: t("reports.others"),
+    });
     spec = attendanceSpec(report, {
       ...labels("attendance", {
         name: t("reports.attendance.name"),
@@ -79,7 +92,7 @@ export async function GET(
         onLeave: t("reports.attendance.onLeave"),
         absent: t("reports.attendance.absent"),
       }),
-    });
+    }, chart);
     filename = `attendance-${report.month}.pdf`;
   } else if (kind === "leave") {
     const { from, to } = parseDateRange(
@@ -87,6 +100,7 @@ export async function GET(
       url.searchParams.get("to") ?? undefined,
     );
     const report = await leaveReport(actor, from, to);
+    const chart = leaveChart(report, t("reports.leave.approvedTotal"));
     spec = leaveSpec(report, {
       ...labels("leave", {
         name: t("reports.leave.name"),
@@ -102,7 +116,7 @@ export async function GET(
         status_REJECTED: t("leave.status.REJECTED"),
         status_CANCELLED: t("leave.status.CANCELLED"),
       }),
-    });
+    }, chart);
     filename = `leave-${report.from.toISOString().slice(0, 10)}.pdf`;
   } else if (kind === "tasks") {
     const { from, to } = parseDateRange(
@@ -110,6 +124,13 @@ export async function GET(
       url.searchParams.get("to") ?? undefined,
     );
     const report = await taskReport(actor, from, to);
+    const chart = taskChart(report, {
+      done: t("reports.tasks.done"),
+      open: t("reports.tasks.open"),
+      overdue: t("reports.tasks.overdue"),
+      unassigned: t("reports.tasks.unassigned"),
+      other: t("reports.others"),
+    });
     spec = taskSpec(report, {
       ...labels("tasks", {
         name: t("reports.tasks.name"),
@@ -119,10 +140,13 @@ export async function GET(
         unassigned: t("reports.tasks.unassigned"),
         total: t("reports.tasks.total"),
       }),
-    });
+    }, chart);
     filename = `tasks-${report.from.toISOString().slice(0, 10)}.pdf`;
   } else {
     const report = await licenseReport();
+    const chart = licenseChart(report, t("reports.licenses.dueByMonth"), (date) =>
+      new Intl.DateTimeFormat("en-IN", { month: "short", timeZone: "UTC" }).format(date),
+    );
     spec = licenseSpec(report, {
       ...labels("licenses", {
         name: t("reports.licenses.name"),
@@ -136,7 +160,7 @@ export async function GET(
         total: t("reports.licenses.total"),
         asAt: t("reports.licenses.asAt"),
       }),
-    });
+    }, chart);
     filename = "licences.pdf";
   }
 

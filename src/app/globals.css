@@ -26,6 +26,20 @@
   --success-ink: #0f5f46;
   --danger-ink: #a32115;
   --pending-ink: #7a4e00;
+
+  /* Chart colours, in a fixed order that is the colourblind-safety mechanism —
+     not a palette to reorder by taste. Every value here was checked with the
+     validator against the card surface in both modes: lightness band, chroma
+     floor, adjacent CVD separation, normal-vision separation and contrast.
+     The brand yellow #FBB03B is not here: at L 0.81 it sits outside the band and
+     reads 1.85:1 on white, so a darker step of the same hue is used instead. */
+  --viz-1: #1d9e75; /* present · done */
+  --viz-2: #c8850b; /* half day */
+  --viz-3: #2a78d6; /* leave · open */
+  --viz-4: #e8412c; /* absent · overdue */
+  /* One hue for magnitude, where the bars are all the same thing. */
+  --viz-seq: #c96e0a;
+  --viz-grid: #ece7df;
 }
 
 .dark {
@@ -41,6 +55,13 @@
   --success-ink: #4fd1a5;
   --danger-ink: #ff8a7a;
   --pending-ink: #fbb03b;
+
+  /* Dark mode is stepped for the dark card, not flipped: green and yellow hold,
+     blue and red and the sequential hue move up to clear the dark band. */
+  --viz-3: #3987e5;
+  --viz-4: #e66767;
+  --viz-seq: #d9791a;
+  --viz-grid: #3a3934;
 }
 
 @theme inline {
@@ -59,6 +80,12 @@
   --color-success-ink: var(--success-ink);
   --color-danger-ink: var(--danger-ink);
   --color-pending-ink: var(--pending-ink);
+  --color-viz-1: var(--viz-1);
+  --color-viz-2: var(--viz-2);
+  --color-viz-3: var(--viz-3);
+  --color-viz-4: var(--viz-4);
+  --color-viz-seq: var(--viz-seq);
+  --color-viz-grid: var(--viz-grid);
 
   --font-sans: var(--font-mukta), var(--font-mukta-vaani), ui-sans-serif,
     system-ui, sans-serif;

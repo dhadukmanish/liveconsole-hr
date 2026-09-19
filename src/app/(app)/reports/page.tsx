@@ -7,6 +7,13 @@ import { buttonVariants } from "@/components/ui/button";
 import { Card, CardMuted } from "@/components/ui/card";
 import { Input, Label, Select } from "@/components/ui/field";
 import { EmptyState, PageHeader } from "@/components/ui/page";
+import { ReportChart } from "@/components/report-chart";
+import {
+  attendanceChart,
+  leaveChart,
+  licenseChart,
+  taskChart,
+} from "@/lib/chart-model";
 import { requireUser } from "@/lib/auth/guard";
 import { can } from "@/lib/auth/session";
 import { ROLE_ADMIN, ROLE_SUPERADMIN } from "@/lib/rbac";
@@ -105,7 +112,7 @@ export default async function ReportsPage({
           "September attendance" is a link somebody can send. */}
       <Card className="mb-4">
         <form className="flex flex-wrap items-end gap-3">
-          <div className="min-w-[10rem] flex-1">
+          <div className="basis-full sm:basis-auto sm:min-w-[10rem] sm:flex-1">
             <Label htmlFor="kind">{t("reports.pick")}</Label>
             <Select id="kind" name="kind" defaultValue={kind}>
               {available.map((value) => (
@@ -117,7 +124,7 @@ export default async function ReportsPage({
           </div>
 
           {kind === "attendance" ? (
-            <div className="min-w-[9rem] flex-1">
+            <div className="basis-full sm:basis-auto sm:min-w-[9rem] sm:flex-1">
               <Label htmlFor="month">{t("reports.month")}</Label>
               <Input id="month" name="month" type="month" defaultValue={month} />
             </div>
@@ -125,11 +132,11 @@ export default async function ReportsPage({
 
           {kind === "leave" || kind === "tasks" ? (
             <>
-              <div className="min-w-[9rem] flex-1">
+              <div className="basis-full sm:basis-auto sm:min-w-[9rem] sm:flex-1">
                 <Label htmlFor="from">{t("reports.from")}</Label>
                 <Input id="from" name="from" type="date" defaultValue={toDateInput(from)} />
               </div>
-              <div className="min-w-[9rem] flex-1">
+              <div className="basis-full sm:basis-auto sm:min-w-[9rem] sm:flex-1">
                 <Label htmlFor="to">{t("reports.to")}</Label>
                 <Input id="to" name="to" type="date" defaultValue={toDateInput(to)} />
               </div>
@@ -163,9 +170,17 @@ async function AttendanceTable({ user, month }: { user: Actor; month: string }) 
   if (report.rows.length === 0) return <EmptyState>{t("reports.empty")}</EmptyState>;
 
   const days = Array.from({ length: report.dayCount }, (_, index) => index + 1);
+  const chart = attendanceChart(report, {
+    present: t("reports.attendance.present"),
+    halfDay: t("reports.attendance.halfDay"),
+    onLeave: t("reports.attendance.onLeave"),
+    absent: t("reports.attendance.absent"),
+    other: t("reports.others"),
+  });
 
   return (
     <>
+      <ReportChart model={chart} title={t("reports.chart")} />
       <CardMuted className="mb-2">
         {rangeLabel(report.from, report.to)} · P {t("reports.attendance.present")} · H{" "}
         {t("reports.attendance.halfDay")} · L {t("reports.attendance.onLeave")} · A{" "}
@@ -228,6 +243,11 @@ async function LeaveTable({ user, from, to }: { user: Actor; from: Date; to: Dat
 
   return (
     <>
+      <ReportChart
+        model={leaveChart(report, t("reports.leave.approvedTotal"))}
+        title={t("reports.chart")}
+      />
+
       {report.totals.length > 0 ? (
         <Card className="mb-3 flex flex-wrap gap-2">
           {report.totals.map((total) => (
@@ -278,7 +298,18 @@ async function TaskTable({ user, from, to }: { user: Actor; from: Date; to: Date
 
   if (rows.length === 0) return <EmptyState>{t("reports.empty")}</EmptyState>;
 
+  const chart = taskChart(report, {
+    done: t("reports.tasks.done"),
+    open: t("reports.tasks.open"),
+    overdue: t("reports.tasks.overdue"),
+    unassigned: t("reports.tasks.unassigned"),
+    other: t("reports.others"),
+  });
+
   return (
+    <>
+      <ReportChart model={chart} title={t("reports.chart")} />
+
     <ul className="flex flex-col gap-2">
       {rows.map((row) => (
         <li key={row.userId}>
@@ -301,6 +332,7 @@ async function TaskTable({ user, from, to }: { user: Actor; from: Date; to: Date
         </li>
       ))}
     </ul>
+    </>
   );
 }
 
@@ -309,7 +341,14 @@ async function LicenseTable() {
   const report = await licenseReport();
   if (report.rows.length === 0) return <EmptyState>{t("reports.empty")}</EmptyState>;
 
+  const chart = licenseChart(report, t("reports.licenses.dueByMonth"), (date) =>
+    new Intl.DateTimeFormat("en-IN", { month: "short", timeZone: "UTC" }).format(date),
+  );
+
   return (
+    <>
+      <ReportChart model={chart} title={t("reports.licenses.dueByMonth")} />
+
     <ul className="flex flex-col gap-2">
       {report.rows.map((row) => (
         <li key={row.id}>
@@ -328,5 +367,6 @@ async function LicenseTable() {
         </li>
       ))}
     </ul>
+    </>
   );
 }

@@ -1,4 +1,5 @@
 import type { TableSpec } from "@/lib/report-pdf";
+import type { ChartModel } from "@/lib/chart-model";
 import type {
   AttendanceReport,
   LeaveReport,
@@ -18,7 +19,11 @@ import { formatDate, minutesToHours } from "@/lib/workday";
  */
 export type SpecLabels = Record<string, string>;
 
-export function attendanceSpec(report: AttendanceReport, labels: SpecLabels): TableSpec {
+export function attendanceSpec(
+  report: AttendanceReport,
+  labels: SpecLabels,
+  chart?: ChartModel,
+): TableSpec {
   const dayColumns = Array.from({ length: report.dayCount }, (_, index) => ({
     header: String(index + 1),
     width: 15,
@@ -26,6 +31,7 @@ export function attendanceSpec(report: AttendanceReport, labels: SpecLabels): Ta
   }));
 
   return {
+    chart,
     title: labels.title,
     subtitle: `${rangeLabel(report.from, report.to)}  ·  P ${labels.present} · H ${labels.halfDay} · L ${labels.onLeave} · A ${labels.absent}`,
     orientation: "landscape",
@@ -51,8 +57,13 @@ export function attendanceSpec(report: AttendanceReport, labels: SpecLabels): Ta
   };
 }
 
-export function leaveSpec(report: LeaveReport, labels: SpecLabels): TableSpec {
+export function leaveSpec(
+  report: LeaveReport,
+  labels: SpecLabels,
+  chart?: ChartModel,
+): TableSpec {
   return {
+    chart,
     title: labels.title,
     subtitle: rangeLabel(report.from, report.to),
     columns: [
@@ -89,7 +100,11 @@ export function leaveSpec(report: LeaveReport, labels: SpecLabels): TableSpec {
   };
 }
 
-export function taskSpec(report: TaskReport, labels: SpecLabels): TableSpec {
+export function taskSpec(
+  report: TaskReport,
+  labels: SpecLabels,
+  chart?: ChartModel,
+): TableSpec {
   const rows = report.rows.map((row) => [
     row.name,
     String(row.open),
@@ -107,6 +122,7 @@ export function taskSpec(report: TaskReport, labels: SpecLabels): TableSpec {
     report.rows.reduce((total, row) => total + pick(row), 0);
 
   return {
+    chart,
     title: labels.title,
     subtitle: rangeLabel(report.from, report.to),
     columns: [
@@ -127,8 +143,13 @@ export function taskSpec(report: TaskReport, labels: SpecLabels): TableSpec {
   };
 }
 
-export function licenseSpec(report: LicenseReport, labels: SpecLabels): TableSpec {
+export function licenseSpec(
+  report: LicenseReport,
+  labels: SpecLabels,
+  chart?: ChartModel,
+): TableSpec {
   return {
+    chart,
     title: labels.title,
     subtitle: labels.asAt,
     columns: [

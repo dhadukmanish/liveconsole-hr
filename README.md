@@ -16,8 +16,8 @@ Built so far:
   for super admins.
 
 - **Reports** — attendance register, leave register, task summary and licence
-  list, each scoped the same way as the rest of the app and downloadable as a
-  PDF.
+  list, each with a chart, each scoped the same way as the rest of the app and
+  downloadable as a PDF.
 
 `BRIEF.md` has the original plan.
 
@@ -169,3 +169,16 @@ server.js        entry point when running from source
 - **A leave register defaults to the whole month, not up to today.** Stopping at
   today would hide leave already approved for next week, which is exactly what
   somebody planning the month is looking for.
+- **The chart palette was computed, not chosen.** Every colour in `--viz-*` was
+  run through the validator against the real card surface in both modes:
+  lightness band, chroma floor, colour-blind separation between adjacent
+  segments, normal-vision separation, and contrast. Two consequences worth
+  knowing: the brand yellow `#FBB03B` is not in it — at L 0.81 it sits outside
+  the band and reads 1.85:1 on white, so a darker step of the same hue is used —
+  and the task stack goes done, open, overdue so that blue sits between green and
+  red, the one pair protanopia struggles with. Dark mode is stepped for the dark
+  card, not flipped.
+- **Charts are server-rendered inline SVG.** No chart library and no client
+  JavaScript: they are bars, the data is already on the server, and the payload
+  goes to shared hosting over FTP. The PDF draws the same model with rectangles,
+  so the printed chart and the screen chart cannot disagree.
