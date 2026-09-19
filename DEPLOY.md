@@ -319,6 +319,7 @@ back first or the older code may meet columns it does not expect.
 | **A generic "500 - Internal server error" page** | IIS sends detailed errors to local requests only. `deploy-variants/web.config.detailed` turns them on for remote callers; take it off again afterwards, since it exposes server paths. |
 | Host's placeholder page still shows | `index.html` was not deleted from the site root |
 | HTTP 500.19 | `web.config` references a handler the account does not have — switch to the iisnode block |
+| Upload stops part way with "connection reset" or "client is closed" | The host dropping the data socket. The uploader reconnects and carries on, and the deploy retries the whole pass with `--resume`, which skips what is already there. If both passes fail, run it again — nothing is left half-written that a resume cannot finish |
 | HTTP 502 / app never starts | Check `logs/`. Usually `.env` missing, or the app pool cannot write to `App_Data/uploads` |
 | "Query engine library for current platform could not be found" | The Windows Prisma engine did not make it into the payload. Confirm `binaryTargets = ["native", "windows"]` in `prisma/schema.prisma`, re-run `npm run package` |
 | Timeouts on first request after idle | Shared hosting spun the process down. `startupTimeLimit` is already 120s; first hit after idle is slow by design |

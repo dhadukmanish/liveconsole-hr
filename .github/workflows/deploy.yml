@@ -550,7 +550,21 @@ jobs:
           FTP_REMOTE: ${{ vars.FTP_REMOTE || '/' }}
         # The host's placeholder index.html is served ahead of the app, and this
         # deploy never produces an index.html of its own.
-        run: node scripts/ftp-deploy.mjs --remove-default-index
+        #
+        # Two passes: this host drops the connection part way through a
+        # 2,000-file upload. The uploader reconnects on its own, but if it runs
+        # out of patience the second pass picks up where it left off — --resume
+        # skips what is already there at the right size, so a retry is a minute
+        # rather than another quarter of an hour.
+        run: |
+          set +e
+          node scripts/ftp-deploy.mjs --remove-default-index
+          first=$?
+          set -e
+          if [ "$first" -ne 0 ]; then
+            echo "::warning::The first upload pass failed; resuming."
+            node scripts/ftp-deploy.mjs --remove-default-index --resume
+          fi
 
       - name: Check the site answers
         env:

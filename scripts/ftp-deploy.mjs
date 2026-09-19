@@ -16,6 +16,8 @@
  *   --secure          use FTPS (explicit TLS)
  *   --port <n>        control port             (default: 21)
  *   --list            print the remote folder listing and stop
+ *   --resume          skip files whose size already matches the host, for
+ *                     retrying an upload the host interrupted part way
  *   --logs            print the app's stdout logs from the host and stop
  *   --put <file> --as <name>
  *                     upload a single file, for swapping web.config while
@@ -172,11 +174,24 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * locked file that genuinely differs fails the deploy rather than leaving the
  * site half updated.
  */
-export async function uploadTree(client, localRoot, remoteRoot) {
+export async function uploadTree(client, localRoot, remoteRoot, options = {}) {
   const { readdir, stat } = await import("node:fs/promises");
+  const { reconnect, resume = false } = options;
   const uploaded = { count: 0 };
   const skipped = [];
   const failed = [];
+  const reconnects = { count: 0 };
+
+  /**
+   * A dead connection is not a dead file. This host drops the data socket part
+   * way through a 2,000-file upload, and once basic-ftp marks the client closed
+   * every later call fails instantly — so the whole deploy failed on one
+   * network blip. Reconnect and carry on with the same file.
+   */
+  const isConnectionLost = (error) =>
+    /client is closed|econnreset|epipe|etimedout|socket|not connected/i.test(
+      String(error?.message ?? error),
+    );
 
   async function remoteSize(remotePath) {
     try {
@@ -204,7 +219,15 @@ export async function uploadTree(client, localRoot, remoteRoot) {
       const localSize = (await stat(localPath)).size;
       let lastError;
 
-      for (let attempt = 1; attempt <= 3; attempt += 1) {
+      // Resuming an interrupted upload: same size means it already went up.
+      // Off by default — for an app file, same size and different content is
+      // unlikely but possible, and a half-updated site is worse than a slow one.
+      if (resume && (await remoteSize(remotePath)) === localSize) {
+        skipped.push(path.posix.relative(remoteRoot, remotePath) || entry.name);
+        continue;
+      }
+
+      for (let attempt = 1; attempt <= 4; attempt += 1) {
         try {
           await client.uploadFrom(localPath, remotePath);
           uploaded.count += 1;
@@ -212,6 +235,20 @@ export async function uploadTree(client, localRoot, remoteRoot) {
           break;
         } catch (error) {
           lastError = error;
+
+          if (isConnectionLost(error) && reconnect) {
+            try {
+              await reconnect();
+              reconnects.count += 1;
+              // The working directory is gone with the old session, and the
+              // directory itself may predate it.
+              await client.ensureDir(remoteDir);
+              continue;
+            } catch {
+              // Reconnecting failed too; fall through to the normal backoff.
+            }
+          }
+
           // 550 here is almost always "in use by another process".
           await sleep(attempt * 1500);
         }
@@ -232,7 +269,7 @@ export async function uploadTree(client, localRoot, remoteRoot) {
   }
 
   await walk(localRoot, remoteRoot);
-  return { uploaded: uploaded.count, skipped, failed };
+  return { uploaded: uploaded.count, skipped, failed, reconnects: reconnects.count };
 }
 
 async function main() {
@@ -360,11 +397,19 @@ async function main() {
     // Uploaded file by file rather than with uploadFromDir, because a redeploy
     // onto a running Windows app hits locked files, and one locked file must
     // not abandon the other two thousand.
-    const result = await uploadTree(client, LOCAL, REMOTE);
+    const result = await uploadTree(client, LOCAL, REMOTE, {
+      reconnect: () => connect(client),
+      resume: flag("resume"),
+    });
     client.trackProgress();
 
     console.log("\n");
     console.log(`Uploaded ${result.uploaded} files.`);
+    if (result.reconnects > 0) {
+      console.log(
+        `The host dropped the connection ${result.reconnects} time(s); reconnected and carried on.`,
+      );
+    }
     if (result.skipped.length > 0) {
       console.log(
         `\n${result.skipped.length} file(s) were locked by the running app but are` +
