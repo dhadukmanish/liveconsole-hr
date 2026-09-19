@@ -19,13 +19,18 @@ async function handle(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  // A diagnostic call is not the scheduler. Without this, the deploy's own
+  // health check would keep the Notifications screen saying the scheduler is
+  // alive when no cron job exists at all — the one thing that screen is for.
+  const probe = new URL(request.url).searchParams.get("probe") === "1";
+
   const limitParam = new URL(request.url).searchParams.get("limit");
   const parsed = Number(limitParam);
   const limit = Number.isInteger(parsed) && parsed > 0 && parsed <= 200 ? parsed : 40;
 
   try {
     const summary = await flushNotifications(limit);
-    await recordCronRun(
+    if (!probe) await recordCronRun(
       "notifications",
       `${summary.channel}: sent ${summary.sent}, retrying ${summary.retrying}, failed ${summary.failed}`,
     );

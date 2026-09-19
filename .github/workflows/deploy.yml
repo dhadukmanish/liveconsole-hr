@@ -231,8 +231,10 @@ jobs:
             # Safe to call: the reminder run is idempotent per India-local day,
             # and the flush only sends what is already queued — to the server log
             # while no WhatsApp credentials are set.
+            # probe=1 so this check does not masquerade as the scheduler on the
+            # Notifications screen.
             for endpoint in reminders notifications; do
-              body=$(curl -s --max-time 60 "$base/api/cron/$endpoint?token=$token")
+              body=$(curl -s --max-time 60 "$base/api/cron/$endpoint?token=$token&probe=1")
               echo "  $endpoint: ${body:0:250}"
               case "$body" in
                 *'"ok":true'*) echo "  ok    $endpoint works" ;;

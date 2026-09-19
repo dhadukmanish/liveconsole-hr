@@ -19,9 +19,14 @@ async function handle(request: Request) {
     return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   }
 
+  // A diagnostic call is not the scheduler. Without this, the deploy's own
+  // health check would keep the Notifications screen saying the scheduler is
+  // alive when no cron job exists at all — the one thing that screen is for.
+  const probe = new URL(request.url).searchParams.get("probe") === "1";
+
   try {
     const summary = await runReminders();
-    await recordCronRun("reminders", `queued ${summary.queued}, already there ${summary.skipped}`);
+    if (!probe) await recordCronRun("reminders", `queued ${summary.queued}, already there ${summary.skipped}`);
     // A partial failure is still a 200: the scheduler must not retry the whole
     // run over one unreachable number, and failed sends are retried tomorrow.
     return NextResponse.json({ ok: true, ...summary });
