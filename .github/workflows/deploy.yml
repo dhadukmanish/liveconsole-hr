@@ -189,6 +189,8 @@ jobs:
           echo "=== routes ==="
           probe /login 200 "login page renders"
           # A signed-out request must be redirected, never served the screen.
+          probe /home "307 302" "the dashboard requires a session"
+          probe /reports "307 302" "reports require a session"
           probe /phonebook "307 302" "phone book requires a session"
           probe /licenses "307 302" "licenses require a session"
           probe /tasks "307 302" "tasks require a session"
