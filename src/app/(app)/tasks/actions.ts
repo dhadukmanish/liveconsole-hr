@@ -8,7 +8,8 @@ import { requirePermission } from "@/lib/auth/guard";
 import { can, type CurrentUser } from "@/lib/auth/session";
 import { writeAudit } from "@/lib/audit";
 import { visibleUserIds } from "@/lib/scope";
-import { fromDateInput } from "@/lib/workday";
+import { enqueue } from "@/lib/notify";
+import { formatDate, fromDateInput } from "@/lib/workday";
 
 export type TaskState = { error?: string; notice?: string };
 
@@ -56,6 +57,36 @@ function readForm(formData: FormData) {
     assigneeId: String(formData.get("assigneeId") ?? "") || undefined,
     dueDate: String(formData.get("dueDate") ?? "") || undefined,
   };
+}
+
+/**
+ * Tell somebody work has landed on them — unless they gave it to themselves,
+ * which needs no announcement.
+ *
+ * The dedupe key is the task and the person, so reassigning away and back does
+ * not ping them twice about the same task.
+ */
+async function notifyAssignee(
+  task: { id: string; title: string; assigneeId: string | null; taskPriorityId: string; dueDate: Date | null },
+  actorId: string,
+) {
+  if (!task.assigneeId || task.assigneeId === actorId) return;
+
+  const priority = await prisma.taskPriority.findUnique({
+    where: { id: task.taskPriorityId },
+    select: { name: true },
+  });
+
+  await enqueue({
+    userId: task.assigneeId,
+    template: "task_assigned",
+    values: {
+      title: task.title,
+      priority: priority?.name ?? "",
+      due: task.dueDate ? formatDate(task.dueDate) : "",
+    },
+    dedupeKey: `task-assigned:${task.id}:${task.assigneeId}`,
+  });
 }
 
 /** Assigning work to someone you cannot see would hide the task from you. */
@@ -107,6 +138,8 @@ export async function createTaskAction(
     summary: task.title,
   });
 
+  await notifyAssignee(task, actor.id);
+
   revalidatePath("/tasks");
   revalidatePath("/home");
   redirect(`/tasks/${task.id}`);
@@ -135,7 +168,7 @@ export async function updateTaskAction(
   const dueDate = input.dueDate ? fromDateInput(input.dueDate) : null;
   const status = await prisma.taskStatus.findUnique({ where: { id: input.taskStatusId } });
 
-  await prisma.task.update({
+  const updated = await prisma.task.update({
     where: { id: taskId },
     data: {
       title: input.title,
@@ -158,6 +191,11 @@ export async function updateTaskAction(
     entityId: taskId,
     summary: input.title,
   });
+
+  // Only a change of hands is news; editing a title is not.
+  if (updated.assigneeId && updated.assigneeId !== existing.assigneeId) {
+    await notifyAssignee(updated, actor.id);
+  }
 
   revalidatePath("/tasks");
   revalidatePath(`/tasks/${taskId}`);

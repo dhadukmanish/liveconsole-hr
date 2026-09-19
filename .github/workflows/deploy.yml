@@ -419,6 +419,11 @@ jobs:
           MSG91_TEMPLATE_ID: ${{ secrets.MSG91_TEMPLATE_ID }}
           MSG91_REMINDER_TEMPLATE_ID: ${{ secrets.MSG91_REMINDER_TEMPLATE_ID }}
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          NOTIFY_CHANNEL: ${{ vars.NOTIFY_CHANNEL }}
+          WHATSAPP_PHONE_NUMBER_ID: ${{ secrets.WHATSAPP_PHONE_NUMBER_ID }}
+          WHATSAPP_ACCESS_TOKEN: ${{ secrets.WHATSAPP_ACCESS_TOKEN }}
+          WHATSAPP_API_VERSION: ${{ vars.WHATSAPP_API_VERSION }}
+          WHATSAPP_TEMPLATE_LANG: ${{ vars.WHATSAPP_TEMPLATE_LANG }}
         run: |
           # Written with printf from the environment so no secret is ever echoed
           # into the log. GitHub masks secrets, but not printing them is better.
@@ -440,6 +445,11 @@ jobs:
             printf 'MSG91_TEMPLATE_ID="%s"\n' "$MSG91_TEMPLATE_ID"
             printf 'MSG91_REMINDER_TEMPLATE_ID="%s"\n' "$MSG91_REMINDER_TEMPLATE_ID"
             printf 'CRON_SECRET="%s"\n' "$(bash scripts/cron-token.sh)"
+            printf 'NOTIFY_CHANNEL="%s"\n' "$NOTIFY_CHANNEL"
+            printf 'WHATSAPP_PHONE_NUMBER_ID="%s"\n' "$WHATSAPP_PHONE_NUMBER_ID"
+            printf 'WHATSAPP_ACCESS_TOKEN="%s"\n' "$WHATSAPP_ACCESS_TOKEN"
+            printf 'WHATSAPP_API_VERSION="%s"\n' "${WHATSAPP_API_VERSION:-v21.0}"
+            printf 'WHATSAPP_TEMPLATE_LANG="%s"\n' "${WHATSAPP_TEMPLATE_LANG:-en}"
           } > deploy-payload/.env
           chmod 600 deploy-payload/.env
           echo "Wrote deploy-payload/.env ($(wc -l < deploy-payload/.env) lines)"

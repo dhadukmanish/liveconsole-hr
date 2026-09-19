@@ -7,8 +7,9 @@ import { runReminders } from "@/lib/reminders";
  * (cron-job.org) calls this once a day.
  *
  * GET is supported because most free schedulers can only issue a GET, and the
- * handler is idempotent by design: a repeat call inside the same India-local
- * day sends nothing (see ReminderLog).
+ * handler is idempotent by design: reminders are queued with a dedupe key
+ * carrying the India-local day, so a repeat call inside the same day queues
+ * nothing. Sending happens in /api/cron/notifications.
  */
 export const dynamic = "force-dynamic";
 

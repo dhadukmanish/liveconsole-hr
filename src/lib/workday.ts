@@ -43,6 +43,11 @@ export function formatIstTime(instant: Date): string {
   return `${String(ist.getUTCHours()).padStart(2, "0")}:${String(ist.getUTCMinutes()).padStart(2, "0")}`;
 }
 
+/** "18 Sep 2026, 21:07" in India, for a stored timestamp. */
+export function formatDateTimeIst(instant: Date, locale = "en-IN"): string {
+  return `${formatDate(workDateFor(instant), locale)}, ${formatIstTime(instant)}`;
+}
+
 /** "18 Sep 2026" for a date-only value. */
 export function formatDate(date: Date, locale = "en-IN"): string {
   return new Intl.DateTimeFormat(locale, {

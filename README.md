@@ -11,7 +11,11 @@ Built so far:
 - **Phase 4** — phone book, licences with expiry tracking, daily reminders and
   database snapshots, both driven by an external scheduler.
 
-Phase 5 (WhatsApp) is still to come; `BRIEF.md` has the full plan.
+- **Phase 5** — WhatsApp: an outbox that queues every notification, a Cloud API
+  channel that drains it, click-to-chat where that is quicker, and a delivery log
+  for super admins.
+
+`BRIEF.md` has the original plan.
 
 - **Stack** — Next.js 15.5 (App Router, TypeScript, `src/`), Tailwind v4,
   Prisma 6 + PostgreSQL, next-intl (en / hi / gu), PWA via `@ducanh2912/next-pwa`.
@@ -70,8 +74,9 @@ prisma/          schema, migrations, seed
 scripts/         local db, icon generation, deploy packaging
 src/app/(auth)/  login
 src/app/(app)/   everything behind a session
-src/app/api/     document streaming, ID card PDF, the reminder and backup cron routes
-src/lib/         prisma, rbac, scope, storage, auth, audit, validation, reminders, backup
+src/app/api/     document streaming, ID card PDF, the three cron routes
+src/lib/         prisma, rbac, scope, storage, auth, audit, validation, reminders,
+                 backup, notify (the outbox), messaging (the channels)
 messages/        en / hi / gu (identical key sets)
 web.config       IIS configuration for the host
 server.js        entry point when running from source
@@ -107,3 +112,17 @@ server.js        entry point when running from source
   `information_schema` and dumps what it finds, minus sessions and one-time
   codes. It includes password hashes — that is what makes it restorable — so the
   files live in `App_Data`, which IIS does not serve.
+- **Notifications are queued, never sent inline.** Approving leave writes a row
+  in `notifications`; the external scheduler sends it. A server action must not
+  sit waiting on Meta's API, iisnode gives us no background worker, and a failed
+  send has to be retryable — which an inline call cannot be once the request has
+  ended. Producers carry a dedupe key, so running one twice sends nothing twice.
+- **Every WhatsApp notification is a template.** Meta only allows free-form text
+  within 24 hours of the person writing in, so a notification nobody asked for
+  has to be an approved template. Hence `params` next to `body`: the parameters
+  go to Meta, the body is what SMS, the dev console and the log show.
+- **Approved and rejected are separate templates.** One template with the
+  decision as a parameter would drop an English word into a Gujarati sentence.
+- **Retrying is classified, not blanket.** A rate limit or a Graph 500 is worth
+  another go; an unknown template or a number that is not on WhatsApp is not, and
+  fails immediately so somebody reads it.

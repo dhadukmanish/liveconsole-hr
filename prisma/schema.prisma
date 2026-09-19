@@ -124,6 +124,9 @@ model User {
   /// BCP-47 short code: en | hi | gu.
   locale             String      @default("en")
   themePref          String      @default("system")
+  /// Honoured by the outbox: a person who asks not to be messaged on WhatsApp
+  /// still sees everything in the app, they just stop being pinged.
+  whatsappOptOut     Boolean     @default(false)
   lastLoginAt        DateTime?
   createdById        String?
   createdAt          DateTime    @default(now())
@@ -152,6 +155,7 @@ model User {
   attendanceRecorded Attendance[]   @relation("AttendanceRecorder")
   leaveRequests      LeaveRequest[] @relation("LeaveOwner")
   leaveDecisions     LeaveRequest[] @relation("LeaveApprover")
+  notifications      Notification[] @relation("NotificationRecipient")
 
   @@index([managerId])
   @@index([roleId])
@@ -498,26 +502,63 @@ model License {
   @@map("licenses")
 }
 
-enum ReminderKind {
-  LICENSE_EXPIRY
-  LEAVE_PENDING
+enum NotificationChannel {
+  WHATSAPP
+  SMS
 }
 
-/// One row per thing reminded about per day. The unique key is what makes the
-/// cron endpoint safe to call repeatedly: cron-job.org retries, and nobody
-/// wants four texts about the same licence.
-model ReminderLog {
-  id        String       @id @default(cuid())
-  kind      ReminderKind
-  entityId  String
-  /// The India-local date the reminder was sent for, as YYYY-MM-DD.
-  dayKey    String
-  recipient String
-  channel   String
-  detail    String?
-  createdAt DateTime     @default(now())
+enum NotificationStatus {
+  QUEUED
+  SENT
+  FAILED
+  /// Stopped without being sent: the recipient opted out, or an admin held it.
+  CANCELLED
+}
 
-  @@unique([kind, entityId, dayKey, recipient])
+/// Outbound messages wait here instead of being sent inline.
+///
+/// Three reasons, all of them forced by the setup rather than chosen:
+/// a server action must not sit waiting on Meta's API while somebody stares at
+/// a spinner; iisnode gives us no background worker, so the same external cron
+/// that runs the reminders drains this; and a send that fails has to be
+/// retryable, which an inline call cannot be once the request has ended.
+model Notification {
+  id      String              @id @default(cuid())
+  channel NotificationChannel @default(WHATSAPP)
+  status  NotificationStatus  @default(QUEUED)
+
+  /// Denormalised on purpose: the number the message went to is a record of
+  /// what happened, and must not change when somebody edits their profile.
+  toMobile String
+  /// Who the message is about, for the delivery log. Null for a contact.
+  userId   String?
+
+  /// Our event name, which the provider maps to an approved WhatsApp template.
+  /// Meta only allows free-form text inside a 24-hour window after the person
+  /// writes to us, so a notification nobody asked for has to be a template.
+  template String
+  /// Template parameters in order.
+  params   Json
+  /// The same message as plain text: what SMS and the dev console send, and
+  /// what the delivery log shows a human.
+  body     String
+
+  attempts    Int     @default(0)
+  lastError   String?
+  /// The provider's message id, for chasing a delivery up with Meta.
+  providerRef String?
+
+  /// What makes every producer safe to run twice. A reminder keys on the day,
+  /// a decision on the request, so a retrying cron or a double-clicked button
+  /// cannot queue the same message again.
+  dedupeKey String? @unique
+
+  createdAt DateTime  @default(now())
+  sentAt    DateTime?
+
+  user User? @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
   @@index([createdAt])
-  @@map("reminder_logs")
+  @@map("notifications")
 }

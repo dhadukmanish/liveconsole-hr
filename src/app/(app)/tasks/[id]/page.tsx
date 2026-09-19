@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import { getTranslations } from "next-intl/server";
+import { MessageCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardMuted, CardTitle } from "@/components/ui/card";
@@ -9,6 +10,7 @@ import { prisma } from "@/lib/prisma";
 import { requirePermissionPage } from "@/lib/auth/guard";
 import { can } from "@/lib/auth/session";
 import { userScopeFilter } from "@/lib/scope";
+import { whatsappHref } from "@/lib/phone";
 import { formatDate, toDateInput, workDateFor } from "@/lib/workday";
 import { canSeeTask, deleteTaskAction, moveTaskAction, updateTaskAction } from "../actions";
 
@@ -29,7 +31,7 @@ export default async function TaskDetailPage({
       taskPriority: true,
       taskStatus: true,
       taskType: true,
-      assignee: { select: { id: true, name: true } },
+      assignee: { select: { id: true, name: true, mobile: true } },
       createdBy: { select: { name: true } },
     },
   });
@@ -52,6 +54,16 @@ export default async function TaskDetailPage({
   const overdue = Boolean(
     task.dueDate && !task.taskStatus.isTerminal && task.dueDate < workDateFor(),
   );
+
+  // No point offering to message yourself, or somebody with no mobile we can
+  // reach on WhatsApp.
+  const chatLink =
+    task.assignee && task.assignee.id !== actor.id
+      ? whatsappHref(
+          task.assignee.mobile,
+          `${task.title}${task.dueDate ? ` (${t("tasks.due")}: ${formatDate(task.dueDate)})` : ""}`,
+        )
+      : null;
 
   return (
     <>
@@ -80,6 +92,21 @@ export default async function TaskDetailPage({
         ) : (
           <CardMuted className="mt-3">{t("tasks.noDescription")}</CardMuted>
         )}
+
+        {/* Click-to-chat, not the API: this works from a phone today, with no
+            business account, and opens a real conversation rather than a
+            one-way template. The queued notification is the automatic half. */}
+        {chatLink ? (
+          <a
+            href={chatLink}
+            target="_blank"
+            rel="noreferrer"
+            className="mt-3 inline-flex min-h-12 items-center gap-2 rounded-xl border border-hairline px-4 text-sm font-semibold text-success-ink hover:border-brand"
+          >
+            <MessageCircle className="h-5 w-5" aria-hidden />
+            {t("notify.sendOnWhatsapp")}
+          </a>
+        ) : null}
       </Card>
 
       {/* One tap per column, which beats a drag target on a phone. */}

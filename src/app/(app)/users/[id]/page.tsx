@@ -113,6 +113,7 @@ export default async function UserDetailPage({
               employeeCode: target.profile?.employeeCode ?? "",
               designation: target.profile?.designation ?? "",
               department: target.profile?.department ?? "",
+              whatsappOptOut: target.whatsappOptOut,
             }}
             submitLabelKey="common.save"
           />

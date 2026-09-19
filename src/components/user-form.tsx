@@ -21,6 +21,7 @@ export type UserFormDefaults = {
   employeeCode?: string | null;
   designation?: string | null;
   department?: string | null;
+  whatsappOptOut?: boolean;
 };
 
 export function UserForm({
@@ -162,6 +163,21 @@ export function UserForm({
           <Input id="department" name="department" defaultValue={defaults.department ?? ""} />
         </Field>
       </div>
+
+      {/* A person can ask not to be pinged without losing access to anything:
+          the app still shows them everything. */}
+      <label className="mb-4 flex min-h-12 items-center gap-3 text-sm font-semibold text-ink">
+        <input
+          type="checkbox"
+          name="whatsappOptOut"
+          defaultChecked={defaults.whatsappOptOut ?? false}
+          className="h-5 w-5 rounded border-hairline accent-brand"
+        />
+        <span>
+          {t("notify.optOut")}
+          <span className="block text-sm font-normal text-muted">{t("notify.optOutHint")}</span>
+        </span>
+      </label>
 
       <Button type="submit" size="lg" disabled={pending} className="mt-2">
         {pending ? t("common.loading") : t(submitLabelKey as "common.save")}

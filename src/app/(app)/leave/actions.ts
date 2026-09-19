@@ -6,7 +6,9 @@ import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/guard";
 import { writeAudit } from "@/lib/audit";
 import { canSeeUser } from "@/lib/scope";
-import { fromDateInput, inclusiveDayCount, workDateFor } from "@/lib/workday";
+import { enqueue } from "@/lib/notify";
+import { managerOrAdmins } from "@/lib/recipients";
+import { formatDate, fromDateInput, inclusiveDayCount, workDateFor } from "@/lib/workday";
 
 export type LeaveState = { error?: string; notice?: string };
 
@@ -85,6 +87,25 @@ export async function applyLeaveAction(
     summary: `${leaveType.code} ${days}d`,
   });
 
+  // Tell whoever has to decide. Queued, not sent: the person who just tapped
+  // Apply should not wait on WhatsApp, and a message that cannot be sent must
+  // not lose them their request.
+  if (created.status === "PENDING") {
+    for (const approver of await managerOrAdmins(actor.id)) {
+      await enqueue({
+        userId: approver.id,
+        template: "leave_applied",
+        values: {
+          applicant: actor.name,
+          leaveType: leaveType.name,
+          from: formatDate(start),
+          days,
+        },
+        dedupeKey: `leave-applied:${created.id}:${approver.id}`,
+      });
+    }
+  }
+
   revalidatePath("/leave");
   return { notice: "leave.applied" };
 }
@@ -133,6 +154,23 @@ export async function decideLeaveAction(
     action: `LEAVE_${parsed.data.decision}`,
     entity: "LeaveRequest",
     entityId: request.id,
+  });
+
+  // A decision is the one thing people chase, so it is worth a message.
+  const leaveType = await prisma.leaveType.findUnique({
+    where: { id: request.leaveTypeId },
+    select: { name: true },
+  });
+  await enqueue({
+    userId: request.userId,
+    template: parsed.data.decision === "APPROVED" ? "leave_approved" : "leave_rejected",
+    values: {
+      leaveType: leaveType?.name ?? "",
+      from: formatDate(request.startDate),
+      note: parsed.data.note ?? "",
+    },
+    // One message per decision, however many times the button is pressed.
+    dedupeKey: `leave-decision:${request.id}`,
   });
 
   revalidatePath("/leave");

@@ -76,6 +76,7 @@ const baseUserSchema = z.object({
   employeeCode: optionalText(40),
   designation: optionalText(80),
   department: optionalText(80),
+  whatsappOptOut: z.boolean(),
 });
 
 function readForm(formData: FormData) {
@@ -89,6 +90,8 @@ function readForm(formData: FormData) {
     employeeCode: formData.get("employeeCode") ?? "",
     designation: formData.get("designation") ?? "",
     department: formData.get("department") ?? "",
+    // An unchecked box sends nothing at all, so absence is false.
+    whatsappOptOut: formData.get("whatsappOptOut") !== null,
   };
 }
 
@@ -136,6 +139,7 @@ export async function createUserAction(
         loginMethod: input.loginMethod,
         passwordHash: password ? await hashPassword(password) : null,
         mustChangePassword: Boolean(password),
+        whatsappOptOut: input.whatsappOptOut,
         createdById: actor.id,
         profile: {
           create: {
@@ -232,6 +236,7 @@ export async function updateUserAction(
         roleId: input.roleId,
         managerId,
         loginMethod: input.loginMethod,
+        whatsappOptOut: input.whatsappOptOut,
         ...(newPassword
           ? { passwordHash: await hashPassword(newPassword), mustChangePassword: true }
           : {}),

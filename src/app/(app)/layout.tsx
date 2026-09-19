@@ -41,7 +41,10 @@ export default async function AppLayout({
       ? [{ href: "/users", labelKey: "nav.users", icon: "users" as const }]
       : []),
     ...(user.isSuperAdmin
-      ? [{ href: "/permissions", labelKey: "nav.permissions", icon: "permissions" as const }]
+      ? [
+          { href: "/permissions", labelKey: "nav.permissions", icon: "permissions" as const },
+          { href: "/notifications", labelKey: "nav.notifications", icon: "notifications" as const },
+        ]
       : []),
     ...(can(user, "SETTINGS", "VIEW")
       ? [{ href: "/settings", labelKey: "nav.settings", icon: "settings" as const }]

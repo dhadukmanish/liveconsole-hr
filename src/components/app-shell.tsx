@@ -10,6 +10,7 @@ import {
   FileText,
   Home,
   KeyRound,
+  MessageSquare,
   MoreHorizontal,
   Settings,
   ShieldCheck,
@@ -34,6 +35,7 @@ const ICONS = {
   documents: FileText,
   phonebook: BookUser,
   licenses: KeyRound,
+  notifications: MessageSquare,
   settings: Settings,
 } as const;
 

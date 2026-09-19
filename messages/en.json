@@ -33,7 +33,8 @@
     "documents": "Documents",
     "settings": "Settings",
     "phonebook": "Phone book",
-    "licenses": "Licenses"
+    "licenses": "Licenses",
+    "notifications": "Notifications"
   },
   "auth": {
     "signIn": "Sign in",
@@ -328,5 +329,35 @@
     "expiryRequired": "Enter an expiry date",
     "startAfterExpiry": "Start date cannot be after the expiry date",
     "deleteTitle": "Delete this license"
+  },
+  "notify": {
+    "leaveApplied": "{applicant} has applied for {leaveType} from {from} ({days} day(s)). Please approve or reject in Live Console HR.",
+    "leaveApproved": "Your {leaveType} from {from} is approved. Note: {note}",
+    "leaveRejected": "Your {leaveType} from {from} was not approved. Note: {note}",
+    "leavePending": "{applicant}'s {leaveType} from {from} is still waiting for your approval.",
+    "taskAssigned": "New task for you: {title} ({priority} priority, due {due}).",
+    "licenseExpiry": "{name} expires on {expiry} — {days} day(s) left. Please arrange the renewal.",
+    "licenseExpired": "{name} expired on {expiry}, {days} day(s) ago. Please renew it.",
+    "title": "Notifications",
+    "count": "{count} message(s)",
+    "queued": "Queued",
+    "sent": "Sent",
+    "failed": "Failed",
+    "cancelled": "Cancelled",
+    "all": "All",
+    "channel": "Channel",
+    "attempts": "Attempts",
+    "lastError": "Last error",
+    "none": "Nothing sent yet",
+    "retry": "Try again",
+    "retried": "Queued for another try",
+    "cancel": "Stop this message",
+    "cancelled_one": "Message stopped",
+    "sentAt": "Sent {when}",
+    "queuedAt": "Queued {when}",
+    "notConfigured": "No WhatsApp credentials are set, so messages are written to the server log instead of sent.",
+    "optOut": "Do not send WhatsApp messages",
+    "optOutHint": "They still see everything in the app",
+    "sendOnWhatsapp": "Send on WhatsApp"
   }
 }

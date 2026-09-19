@@ -33,7 +33,8 @@
     "documents": "દસ્તાવેજ",
     "settings": "સેટિંગ્સ",
     "phonebook": "ફોન બુક",
-    "licenses": "લાઇસન્સ"
+    "licenses": "લાઇસન્સ",
+    "notifications": "સૂચનાઓ"
   },
   "auth": {
     "signIn": "સાઇન ઇન",
@@ -328,5 +329,35 @@
     "expiryRequired": "મુદત તારીખ દાખલ કરો",
     "startAfterExpiry": "શરૂ તારીખ મુદત તારીખ પછી ન હોઈ શકે",
     "deleteTitle": "આ લાઇસન્સ રદ કરો"
+  },
+  "notify": {
+    "leaveApplied": "{applicant}ને {from}થી {leaveType} રજા જોઈએ છે ({days} દિવસ). Live Console HR માં મંજૂરી આપો કે ના પાડો.",
+    "leaveApproved": "{from}થી તમારી {leaveType} મંજૂર થઈ. નોંધ: {note}",
+    "leaveRejected": "{from}થી તમારી {leaveType} મંજૂર ન થઈ. નોંધ: {note}",
+    "leavePending": "{applicant}ની {leaveType} ({from}થી) હજી તમારી મંજૂરીની વાટ જોઈ રહી છે.",
+    "taskAssigned": "તમારા માટે નવું કામ: {title} ({priority} પ્રાયોરિટી, {due} સુધી).",
+    "licenseExpiry": "{name}ની મુદત {expiry}ના રોજ પૂરી થાય છે — {days} દિવસ બાકી. રિન્યુ કરાવો.",
+    "licenseExpired": "{name}ની મુદત {expiry}ના રોજ પૂરી થઈ ગઈ, {days} દિવસ પહેલાં. રિન્યુ કરાવો.",
+    "title": "સૂચનાઓ",
+    "count": "{count} સંદેશ",
+    "queued": "કતારમાં",
+    "sent": "મોકલાયું",
+    "failed": "નિષ્ફળ",
+    "cancelled": "રોકાયું",
+    "all": "બધા",
+    "channel": "માધ્યમ",
+    "attempts": "પ્રયાસ",
+    "lastError": "છેલ્લી ભૂલ",
+    "none": "હજી કંઈ મોકલાયું નથી",
+    "retry": "ફરી પ્રયાસ કરો",
+    "retried": "ફરી પ્રયાસ માટે કતારમાં",
+    "cancel": "આ સંદેશ રોકો",
+    "cancelled_one": "સંદેશ રોકી દેવાયો",
+    "sentAt": "{when} મોકલાયું",
+    "queuedAt": "{when} કતારમાં આવ્યું",
+    "notConfigured": "વોટ્સએપની કોઈ કી સેટ નથી, તેથી સંદેશ મોકલાતા નથી, સર્વર લોગમાં લખાય છે.",
+    "optOut": "વોટ્સએપ સંદેશ ન મોકલો",
+    "optOutHint": "એપમાં તેમને બધું દેખાતું રહેશે",
+    "sendOnWhatsapp": "વોટ્સએપ પર મોકલો"
   }
 }

@@ -117,6 +117,11 @@ Keys:
 | `MSG91_REMINDER_TEMPLATE_ID` | A second DLT template, for reminders. Reminders refuse to send over SMS until this is set rather than borrow the OTP template, which the operator never registered for this text. |
 | `CRON_SECRET` | Bearer token for `/api/cron/reminders` and `/api/cron/backup`. The deploy derives one from `AUTH_SECRET` if the repository secret is unset, so rotating `AUTH_SECRET` changes both URLs. |
 | `BACKUP_DIR` | `./App_Data/backups`. Same rules as `UPLOAD_DIR`: writable by the app pool, outside the web root. |
+| `NOTIFY_CHANNEL` | `whatsapp`, `sms` or `console`. Unset infers it: WhatsApp if its credentials are set, else MSG91 if `SMS_PROVIDER=msg91`, else the server log. |
+| `WHATSAPP_PHONE_NUMBER_ID` | From Meta → WhatsApp → API Setup. Not the display number. |
+| `WHATSAPP_ACCESS_TOKEN` | A **permanent** System User token. The test token in the dashboard expires in 24 hours, so sending would stop working tomorrow. |
+| `WHATSAPP_API_VERSION` | Graph version, default `v21.0`. |
+| `WHATSAPP_TEMPLATE_LANG` | Language code of the approved templates, default `en`. |
 
 ## 5. Database migrations
 
@@ -191,6 +196,39 @@ What it sends:
 
 While `SMS_PROVIDER` is `console` these are written to `logs/` instead of sent.
 
+### Messages, on the same scheduler
+
+```
+GET  https://task.kriviinfotech.com/api/cron/notifications?token=<CRON_SECRET>
+```
+
+Nothing in the app sends a message itself. Approving leave, assigning a task and
+the reminder run all write a row into the `notifications` outbox; this endpoint
+is the only thing that talks to WhatsApp. Three reasons, all forced by the
+setup rather than chosen:
+
+- Nobody should watch a spinner while Meta's API is thinking.
+- There is no background worker on this host, so the external scheduler is the
+  only thing that can do slow work.
+- A send that fails has to be retryable, which an inline call cannot be once the
+  request has ended.
+
+Schedule it **every fifteen minutes**. Each run sends at most 40 messages, so it
+cannot outlast the host's request timeout; add `&limit=100` if a backlog needs
+clearing faster. A run reports what it did:
+
+```json
+{"ok":true,"channel":"whatsapp","picked":3,"sent":3,"retrying":0,"failed":0,"errors":[]}
+```
+
+`channel: "console"` means no WhatsApp credentials are set, so messages are
+being written to `logs/` instead of sent — the Notifications screen says so too.
+
+A failure is retried up to four times and then marked FAILED, except where
+retrying cannot help (an unknown template, a number not on WhatsApp), which
+fails immediately. Super admins see all of it under **Notifications**, with the
+last error, and can stop or re-queue a message.
+
 ### Backups, on the same scheduler
 
 ```
@@ -213,7 +251,42 @@ not a backup.
 - It **does** include password hashes, which is what makes it a usable restore.
   Treat the files as sensitive: they are inside `App_Data` for that reason.
 
-## 8. SSL
+## 8. WhatsApp templates (one-time, on Meta)
+
+WhatsApp does not let a business send free-form text to somebody who has not
+written in within the last 24 hours. Every notification here is therefore a
+**template message**, and a template has to be approved by Meta before it can
+be used. That approval is the one part of this nobody can automate.
+
+1. Create a Meta app with the WhatsApp product, add the business phone number,
+   and complete business verification.
+2. In **WhatsApp Manager → Message templates**, create one template per event,
+   category **Utility**, named exactly:
+
+   | Template name | Body, with numbered placeholders |
+   | --- | --- |
+   | `leave_applied` | {{1}} has applied for {{2}} from {{3}} ({{4}} day(s)). Please approve or reject in Live Console HR. |
+   | `leave_approved` | Your {{1}} from {{2}} is approved. Note: {{3}} |
+   | `leave_rejected` | Your {{1}} from {{2}} was not approved. Note: {{3}} |
+   | `leave_pending` | {{1}}'s {{2}} from {{3}} is still waiting for your approval. |
+   | `task_assigned` | New task for you: {{1}} ({{2}} priority, due {{3}}). |
+   | `license_expiry` | {{1}} expires on {{2}} — {{3}} day(s) left. Please arrange the renewal. |
+   | `license_expired` | {{1}} expired on {{2}}, {{3}} day(s) ago. Please renew it. |
+
+   The parameter order matters and is fixed by the code. A different wording is
+   fine; a different number or order of placeholders is not.
+3. Put the phone number id and a permanent access token in the repository
+   secrets, then deploy.
+
+Until that is done the app still works: every message is queued, the
+Notifications screen shows it, and the text is written to `logs/`. Turning
+WhatsApp on later sends only what is still queued, not the whole history.
+
+If a template is approved in Hindi or Gujarati instead of English, set the
+`WHATSAPP_TEMPLATE_LANG` variable to match — Meta selects the template by
+language code, and the app's own text is already translated separately.
+
+## 9. SSL
 
 If `https://` fails, enable SSL for the subdomain in the control panel
 (**Websites → SSL**, Let's Encrypt is free on their plans). Once HTTPS is on,
@@ -221,7 +294,7 @@ add `SESSION_COOKIE_SECURE="true"` to `.env` and restart — the session cookie 
 deliberately not `Secure` by default so the app is not unusable before SSL is
 turned on.
 
-## 9. Redeploying
+## 10. Redeploying
 
 `npm run package`, upload, extract, overwrite. To restart the app without a
 re-upload, touch `web.config` in File Manager (any save recycles the process).
@@ -231,13 +304,13 @@ the documents and the snapshots live.
 The zip contains only an empty `.keep`, so extracting over the top is safe, but
 avoid deleting the folder first.
 
-## 10. Rollback
+## 11. Rollback
 
 Keep the previous `deploy-payload.zip`. Rolling back is re-extracting it. Only a
 migration needs care: if the newer build added a migration, roll the database
 back first or the older code may meet columns it does not expect.
 
-## 11. Troubleshooting
+## 12. Troubleshooting
 
 | Symptom | Cause |
 | --- | --- |
@@ -249,6 +322,9 @@ back first or the older code may meet columns it does not expect.
 | "Query engine library for current platform could not be found" | The Windows Prisma engine did not make it into the payload. Confirm `binaryTargets = ["native", "windows"]` in `prisma/schema.prisma`, re-run `npm run package` |
 | Timeouts on first request after idle | Shared hosting spun the process down. `startupTimeLimit` is already 120s; first hit after idle is slow by design |
 | OTP never arrives | `SMS_PROVIDER` is still `console` — the code is in `logs/`, not an SMS |
+| Every message is `FAILED` with "Template does not exist" | The template names in Meta must match the event names — `leave_applied`, `leave_approved`, `leave_rejected`, `leave_pending`, `task_assigned`, `license_expiry`, `license_expired` — or be mapped with `WHATSAPP_TEMPLATE_<EVENT>`. The language of the approved template must also match `WHATSAPP_TEMPLATE_LANG` |
+| Messages worked yesterday and all fail today | The access token was the dashboard's 24-hour test token. Replace it with a permanent System User token |
+| The Notifications screen says nothing is being sent | Expected until `WHATSAPP_PHONE_NUMBER_ID` and `WHATSAPP_ACCESS_TOKEN` are set; until then the text is in `logs/` |
 | Reminder URL returns `unauthorized` | The token in the URL does not match `CRON_SECRET` in the host's `.env`. Push `[cron-url]` to read the current one; note that rotating `AUTH_SECRET` changes it when no explicit `CRON_SECRET` is set |
 | Reminders run but nobody is told | Expected while `SMS_PROVIDER=console` — check `logs/` for `[sms:console] text for …`. With `msg91`, `MSG91_REMINDER_TEMPLATE_ID` must be set or every send is reported in `failures` |
 

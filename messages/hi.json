@@ -33,7 +33,8 @@
     "documents": "दस्तावेज़",
     "settings": "सेटिंग्स",
     "phonebook": "फ़ोन बुक",
-    "licenses": "लाइसेंस"
+    "licenses": "लाइसेंस",
+    "notifications": "सूचनाएँ"
   },
   "auth": {
     "signIn": "साइन इन",
@@ -328,5 +329,35 @@
     "expiryRequired": "समाप्ति तारीख डालें",
     "startAfterExpiry": "शुरू तारीख समाप्ति तारीख के बाद नहीं हो सकती",
     "deleteTitle": "यह लाइसेंस हटाएँ"
+  },
+  "notify": {
+    "leaveApplied": "{applicant} ने {from} से {leaveType} की छुट्टी मांगी है ({days} दिन)। Live Console HR में मंज़ूरी दें या मना करें।",
+    "leaveApproved": "{from} से आपकी {leaveType} मंज़ूर हो गई। टिप्पणी: {note}",
+    "leaveRejected": "{from} से आपकी {leaveType} मंज़ूर नहीं हुई। टिप्पणी: {note}",
+    "leavePending": "{applicant} की {leaveType} ({from} से) अभी आपकी मंज़ूरी के इंतज़ार में है।",
+    "taskAssigned": "आपके लिए नया कार्य: {title} ({priority} प्राथमिकता, {due} तक)।",
+    "licenseExpiry": "{name} {expiry} को समाप्त हो रहा है — {days} दिन बचे हैं। नवीनीकरण कराएँ।",
+    "licenseExpired": "{name} {expiry} को समाप्त हो गया, {days} दिन पहले। कृपया नवीनीकरण कराएँ।",
+    "title": "सूचनाएँ",
+    "count": "{count} संदेश",
+    "queued": "कतार में",
+    "sent": "भेजा गया",
+    "failed": "विफल",
+    "cancelled": "रोका गया",
+    "all": "सभी",
+    "channel": "माध्यम",
+    "attempts": "कोशिशें",
+    "lastError": "अंतिम त्रुटि",
+    "none": "अभी कुछ नहीं भेजा गया",
+    "retry": "फिर कोशिश करें",
+    "retried": "फिर कोशिश के लिए कतार में",
+    "cancel": "यह संदेश रोकें",
+    "cancelled_one": "संदेश रोक दिया गया",
+    "sentAt": "{when} भेजा गया",
+    "queuedAt": "{when} कतार में आया",
+    "notConfigured": "व्हाट्सएप की कोई कुंजी सेट नहीं है, इसलिए संदेश भेजे नहीं जाते, सर्वर लॉग में लिखे जाते हैं।",
+    "optOut": "व्हाट्सएप संदेश न भेजें",
+    "optOutHint": "ऐप में उन्हें सब कुछ दिखता रहेगा",
+    "sendOnWhatsapp": "व्हाट्सएप पर भेजें"
   }
 }

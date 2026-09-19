@@ -26,10 +26,13 @@ menus are hard to reach):
 | `AUTH_SECRET` | 32+ random characters; changing it later signs everyone out |
 
 Optional: `SUPERADMIN_PASSWORD` (otherwise one is generated and printed once),
-`CRON_SECRET` (the reminder and backup URLs are guarded by it; leave it unset
-and one is derived from `AUTH_SECRET`), and the `MSG91_*` secrets when SMS goes
-live — `MSG91_AUTH_KEY`, `MSG91_SENDER_ID`, `MSG91_TEMPLATE_ID` for login codes
-and `MSG91_REMINDER_TEMPLATE_ID` for reminders, which need a separate template.
+`CRON_SECRET` (the scheduled URLs are guarded by it; leave it unset and one is
+derived from `AUTH_SECRET`), and the `MSG91_*` secrets when SMS goes live —
+`MSG91_AUTH_KEY`, `MSG91_SENDER_ID`, `MSG91_TEMPLATE_ID` for login codes and
+`MSG91_REMINDER_TEMPLATE_ID` for reminders, which need a separate template.
+
+For WhatsApp: `WHATSAPP_PHONE_NUMBER_ID` and `WHATSAPP_ACCESS_TOKEN` (see the
+WhatsApp section below).
 
 ### Then the variables
 
@@ -43,6 +46,8 @@ Same page, **Variables** tab → **New repository variable**:
 | `FTP_REMOTE` | leave unset at first | set it only if the site is not at the FTP root |
 | `BETA_BANNER` | `true` | set to `false` to remove the beta strip |
 | `SESSION_COOKIE_SECURE` | `false` | set to `true` once HTTPS works |
+| `NOTIFY_CHANNEL` | leave unset | `whatsapp`, `sms` or `console`; unset works it out from what is configured |
+| `WHATSAPP_TEMPLATE_LANG` | `en` | set to `hi` or `gu` if your approved templates are in that language |
 
 Variables are visible in logs; secrets are masked. That is why the password and
 the database URLs are secrets and the rest are variables.
@@ -84,10 +89,11 @@ A push **without** `[deploy]` builds nothing and changes nothing on the host.
 
 ---
 
-## Once: the two scheduled jobs
+## Once: the three scheduled jobs
 
-The host has no scheduler of its own, so nothing reminds anybody and nothing
-backs up until these two exist. Both are free and take a few minutes on a phone.
+The host has no scheduler of its own, so nothing reminds anybody, nothing gets
+sent and nothing backs up until these exist. All free, and a few minutes on a
+phone.
 
 1. Push a commit whose first line contains `[cron-url]`. Open the run (Actions
    tab → the run → **Summary**) and copy the URL it prints. It contains the
@@ -97,7 +103,13 @@ backs up until these two exist. Both are free and take a few minutes on a phone.
    | Job | URL | When |
    | --- | --- | --- |
    | Reminders | the URL from step 1 | daily, 09:00, timezone **Asia/Kolkata** |
+   | Messages | the same URL with `/reminders` changed to `/notifications` | every 15 minutes |
    | Backup | the same URL with `/reminders` changed to `/backup` | weekly, Sunday 02:00 |
+
+   The **Messages** one is what actually sends. Approving leave or assigning a
+   task queues a message; nothing leaves the building until this job runs. Every
+   fifteen minutes is a good balance — a person notices a quarter of an hour,
+   and it keeps each run small.
 
 3. Hit **Test run** on each. `{"ok":true,...}` means it works.
    `{"error":"unauthorized"}` means the token does not match the host.
@@ -108,8 +120,38 @@ up copies. Backups land in `App_Data/backups` on the host — download them over
 FTP now and then, because a backup that only lives on the same server is not
 really a backup.
 
-While `SMS_PROVIDER` is still `console`, reminders are written to `logs/` on the
-host instead of being texted.
+---
+
+## WhatsApp
+
+The app queues its messages whatever happens, so this can wait — but nothing is
+actually delivered until it is done. Two halves:
+
+**The half that works today, with no setup.** Every contact in the phone book and
+every task you assign to somebody has a *Send on WhatsApp* button. It opens your
+own WhatsApp with the message ready, and you press send. No business account, no
+approval.
+
+**The automatic half, which needs a WhatsApp Business account.** Approvals,
+assignments and reminders go out on their own. WhatsApp only allows this through
+templates that Meta has approved in advance, so:
+
+1. Create a Meta app with the WhatsApp product, add your business number, and
+   finish business verification.
+2. In WhatsApp Manager → Message templates, add one Utility template per event.
+   The names and the numbered placeholders are listed in `DEPLOY.md` section 8 —
+   the wording is yours, the placeholder order is not.
+3. Add `WHATSAPP_PHONE_NUMBER_ID` and `WHATSAPP_ACCESS_TOKEN` as repository
+   secrets and deploy. Use a **permanent** token: the one the dashboard shows
+   first expires in 24 hours.
+
+Until then, **More → Notifications** (super admin) lists every message with its
+status and says plainly that nothing is being sent. The text also goes to
+`logs/` on the host, so you can read what would have gone out.
+
+Anybody who does not want WhatsApp messages can be switched off individually:
+Users → open them → *Do not send WhatsApp messages*. They keep seeing everything
+inside the app.
 
 ## What the workflow does, in order
 
