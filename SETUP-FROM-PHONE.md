@@ -114,6 +114,10 @@ phone.
 3. Hit **Test run** on each. `{"ok":true,...}` means it works.
    `{"error":"unauthorized"}` means the token does not match the host.
 
+Once they are running, **More → Notifications** says when the scheduler last
+called and what each of the three jobs did. If it says the scheduler has never
+called, the job does not exist — whatever the cron-job.org dashboard shows.
+
 Calling either one twice does no harm: the reminder run sends nothing the second
 time the same day, and the backup overwrites that day's file instead of piling
 up copies. Backups land in `App_Data/backups` on the host — download them over

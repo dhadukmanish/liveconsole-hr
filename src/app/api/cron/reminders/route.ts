@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cronTokenMatches } from "@/lib/cron-auth";
+import { recordCronRun } from "@/lib/cron-log";
 import { runReminders } from "@/lib/reminders";
 
 /**
@@ -20,6 +21,7 @@ async function handle(request: Request) {
 
   try {
     const summary = await runReminders();
+    await recordCronRun("reminders", `queued ${summary.queued}, already there ${summary.skipped}`);
     // A partial failure is still a 200: the scheduler must not retry the whole
     // run over one unreachable number, and failed sends are retried tomorrow.
     return NextResponse.json({ ok: true, ...summary });

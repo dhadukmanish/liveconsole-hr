@@ -9,6 +9,7 @@ import { EmptyState, PageHeader } from "@/components/ui/page";
 import { prisma } from "@/lib/prisma";
 import { requireSuperAdmin } from "@/lib/auth/guard";
 import { messageChannel } from "@/lib/messaging";
+import { lastCronRuns } from "@/lib/cron-log";
 import { formatDateTimeIst } from "@/lib/workday";
 import { cancelNotificationAction, retryNotificationAction } from "./actions";
 
@@ -40,7 +41,7 @@ export default async function NotificationsPage({
   const { status } = await searchParams;
   const filter = STATUSES.find((value) => value === status);
 
-  const [rows, counts] = await Promise.all([
+  const [rows, counts, cronRuns] = await Promise.all([
     prisma.notification.findMany({
       where: filter ? { status: filter } : {},
       include: { user: { select: { name: true } } },
@@ -48,7 +49,14 @@ export default async function NotificationsPage({
       take: 100,
     }),
     prisma.notification.groupBy({ by: ["status"], _count: { _all: true } }),
+    lastCronRuns(),
   ]);
+
+  // Queued messages only move when the scheduler calls, so a scheduler nobody
+  // set up looks exactly like a quiet day. Say when it was last heard from.
+  const flush = cronRuns.find((run) => run.name === "notifications");
+  const flushAgeMinutes = flush ? (Date.now() - flush.at.getTime()) / 60_000 : null;
+  const queuedCount = counts.find((row) => row.status === "QUEUED")?._count._all ?? 0;
 
   const countFor = (value: NotificationStatus) =>
     counts.find((row) => row.status === value)?._count._all ?? 0;
@@ -71,6 +79,38 @@ export default async function NotificationsPage({
         <Alert tone="warning" className="mb-4">
           {t("notify.notConfigured")}
         </Alert>
+      ) : null}
+
+      {/* The scheduler is the only thing that sends, so its silence is the most
+          useful thing this screen can report. */}
+      {flush === undefined ? (
+        <Alert tone={queuedCount > 0 ? "danger" : "warning"} className="mb-4">
+          {t("notify.schedulerNeverRan")}
+        </Alert>
+      ) : flushAgeMinutes !== null && flushAgeMinutes > 60 ? (
+        <Alert tone={queuedCount > 0 ? "danger" : "warning"} className="mb-4">
+          {t("notify.schedulerStale", { when: formatDateTimeIst(flush.at) })}
+        </Alert>
+      ) : (
+        <Alert tone="success" className="mb-4">
+          {t("notify.schedulerLastRan", { when: formatDateTimeIst(flush.at) })}
+        </Alert>
+      )}
+
+      {cronRuns.length > 0 ? (
+        <Card className="mb-4">
+          <ul className="flex flex-col gap-1">
+            {cronRuns.map((run) => (
+              <li key={run.name} className="flex flex-wrap justify-between gap-2 text-sm">
+                <span className="font-semibold text-ink">{t(`notify.job.${run.name}` as "notify.job.backup")}</span>
+                <span className="text-muted">
+                  {formatDateTimeIst(run.at)}
+                  {run.summary ? ` · ${run.summary}` : ""}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Card>
       ) : null}
 
       <div className="-mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1">

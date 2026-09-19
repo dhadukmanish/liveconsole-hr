@@ -359,6 +359,14 @@
     "notConfigured": "વોટ્સએપની કોઈ કી સેટ નથી, તેથી સંદેશ મોકલાતા નથી, સર્વર લોગમાં લખાય છે.",
     "optOut": "વોટ્સએપ સંદેશ ન મોકલો",
     "optOutHint": "એપમાં તેમને બધું દેખાતું રહેશે",
-    "sendOnWhatsapp": "વોટ્સએપ પર મોકલો"
+    "sendOnWhatsapp": "વોટ્સએપ પર મોકલો",
+    "schedulerNeverRan": "શેડ્યુલરે હજી આ સાઇટને કૉલ કર્યો નથી, તેથી કંઈ મોકલાતું નથી. cron-job.org પર /api/cron/notifications નો જોબ બનાવો.",
+    "schedulerStale": "શેડ્યુલર સાથે છેલ્લે {when} વાત થઈ હતી. તેણે દર 15 મિનિટે કૉલ કરવો જોઈએ.",
+    "schedulerLastRan": "શેડ્યુલર છેલ્લે {when} ચાલ્યું.",
+    "job": {
+      "notifications": "સંદેશ",
+      "reminders": "રિમાઇન્ડર",
+      "backup": "બેકઅપ"
+    }
   }
 }

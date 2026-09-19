@@ -359,6 +359,14 @@
     "notConfigured": "No WhatsApp credentials are set, so messages are written to the server log instead of sent.",
     "optOut": "Do not send WhatsApp messages",
     "optOutHint": "They still see everything in the app",
-    "sendOnWhatsapp": "Send on WhatsApp"
+    "sendOnWhatsapp": "Send on WhatsApp",
+    "schedulerNeverRan": "The scheduler has never called this site, so nothing is being sent. Create the cron-job.org job for /api/cron/notifications.",
+    "schedulerStale": "The scheduler was last heard from {when}. It should call every 15 minutes.",
+    "schedulerLastRan": "Scheduler last ran {when}.",
+    "job": {
+      "notifications": "Messages",
+      "reminders": "Reminders",
+      "backup": "Backup"
+    }
   }
 }

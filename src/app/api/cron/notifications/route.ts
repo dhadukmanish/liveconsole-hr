@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cronTokenMatches } from "@/lib/cron-auth";
+import { recordCronRun } from "@/lib/cron-log";
 import { flushNotifications } from "@/lib/notify";
 
 /**
@@ -24,6 +25,10 @@ async function handle(request: Request) {
 
   try {
     const summary = await flushNotifications(limit);
+    await recordCronRun(
+      "notifications",
+      `${summary.channel}: sent ${summary.sent}, retrying ${summary.retrying}, failed ${summary.failed}`,
+    );
     // Individual send failures are reported inside the summary, not as a 500:
     // one bad number must not make the scheduler retry the whole batch.
     return NextResponse.json({ ok: true, ...summary });

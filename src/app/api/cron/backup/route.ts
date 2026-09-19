@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { cronTokenMatches } from "@/lib/cron-auth";
+import { recordCronRun } from "@/lib/cron-log";
 import { runBackup } from "@/lib/backup";
 
 /**
@@ -16,6 +17,7 @@ async function handle(request: Request) {
 
   try {
     const summary = await runBackup();
+    await recordCronRun("backup", `${summary.file}, ${summary.rows} rows`);
     return NextResponse.json({ ok: true, ...summary });
   } catch (error) {
     // A failed backup must be loud: a scheduler that only watches the status
