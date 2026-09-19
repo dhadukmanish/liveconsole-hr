@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import {
+  BarChart3,
   BookUser,
   ChevronRight,
   FileText,
@@ -33,6 +34,8 @@ export default async function MorePage() {
     { href: "/more/profile", label: t("more.profile"), icon: UserCircle },
     { href: "/id-card", label: t("more.idCard"), icon: IdCard },
     { href: "/documents/me", label: t("more.documents"), icon: FileText },
+    // Everybody has a report of their own, so this is not an admin link.
+    { href: "/reports", label: t("nav.reports"), icon: BarChart3 },
     // The bottom bar is full at five tabs, so these two reach their screens here.
     ...(can(user, "PHONEBOOK", "VIEW")
       ? [{ href: "/phonebook", label: t("nav.phonebook"), icon: BookUser }]

@@ -33,7 +33,8 @@
     "settings": "सेटिंग्स",
     "phonebook": "फ़ोन बुक",
     "licenses": "लाइसेंस",
-    "notifications": "सूचनाएँ"
+    "notifications": "सूचनाएँ",
+    "reports": "रिपोर्ट"
   },
   "auth": {
     "signIn": "साइन इन",
@@ -368,6 +369,65 @@
       "notifications": "संदेश",
       "reminders": "रिमाइंडर",
       "backup": "बैकअप"
+    }
+  },
+  "reports": {
+    "title": "रिपोर्ट",
+    "pick": "रिपोर्ट",
+    "month": "महीना",
+    "from": "से",
+    "to": "तक",
+    "show": "दिखाएँ",
+    "download": "PDF डाउनलोड करें",
+    "generatedBy": "Live Console HR · {name}",
+    "scopeOwn": "आपका ही रिकॉर्ड",
+    "scopeTeam": "आप और आपकी टीम",
+    "scopeAll": "सब लोग",
+    "empty": "इस अवधि के लिए कुछ नहीं",
+    "attendance": {
+      "title": "हाज़िरी रजिस्टर",
+      "name": "नाम",
+      "code": "कोड",
+      "presentDays": "दिन",
+      "leaveDays": "छुट्टी",
+      "hours": "घंटे",
+      "present": "हाज़िर",
+      "halfDay": "आधा दिन",
+      "onLeave": "छुट्टी",
+      "absent": "गैरहाज़िर"
+    },
+    "leave": {
+      "title": "छुट्टी रजिस्टर",
+      "name": "नाम",
+      "type": "प्रकार",
+      "from": "से",
+      "to": "तक",
+      "days": "दिन",
+      "status": "स्थिति",
+      "decidedBy": "निर्णय",
+      "approvedTotal": "मंज़ूर"
+    },
+    "tasks": {
+      "title": "कार्य सारांश",
+      "name": "नाम",
+      "open": "खुले",
+      "done": "पूरे",
+      "overdue": "देर से",
+      "unassigned": "बिना सौंपे",
+      "total": "कुल"
+    },
+    "licenses": {
+      "title": "लाइसेंस सूची",
+      "name": "लाइसेंस",
+      "vendor": "वेंडर",
+      "number": "नंबर",
+      "expiry": "समाप्ति",
+      "daysLeft": "दिन",
+      "owner": "ज़िम्मेदार",
+      "cost": "लागत",
+      "expired": "समाप्त",
+      "total": "कुल",
+      "asAt": "सभी चालू लाइसेंस"
     }
   }
 }

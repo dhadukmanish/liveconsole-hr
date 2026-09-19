@@ -9,6 +9,7 @@ import {
   ClipboardList,
   FileText,
   Home,
+  BarChart3,
   KeyRound,
   MessageSquare,
   MoreHorizontal,
@@ -36,6 +37,7 @@ const ICONS = {
   phonebook: BookUser,
   licenses: KeyRound,
   notifications: MessageSquare,
+  reports: BarChart3,
   settings: Settings,
 } as const;
 

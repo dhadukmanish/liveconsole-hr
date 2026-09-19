@@ -33,7 +33,8 @@
     "settings": "સેટિંગ્સ",
     "phonebook": "ફોન બુક",
     "licenses": "લાઇસન્સ",
-    "notifications": "સૂચનાઓ"
+    "notifications": "સૂચનાઓ",
+    "reports": "રિપોર્ટ"
   },
   "auth": {
     "signIn": "સાઇન ઇન",
@@ -368,6 +369,65 @@
       "notifications": "સંદેશ",
       "reminders": "રિમાઇન્ડર",
       "backup": "બેકઅપ"
+    }
+  },
+  "reports": {
+    "title": "રિપોર્ટ",
+    "pick": "રિપોર્ટ",
+    "month": "મહિનો",
+    "from": "થી",
+    "to": "સુધી",
+    "show": "બતાવો",
+    "download": "PDF ડાઉનલોડ કરો",
+    "generatedBy": "Live Console HR · {name}",
+    "scopeOwn": "તમારો પોતાનો રેકોર્ડ",
+    "scopeTeam": "તમે અને તમારી ટીમ",
+    "scopeAll": "બધા",
+    "empty": "આ સમયગાળા માટે કંઈ નથી",
+    "attendance": {
+      "title": "હાજરી રજિસ્ટર",
+      "name": "નામ",
+      "code": "કોડ",
+      "presentDays": "દિવસ",
+      "leaveDays": "રજા",
+      "hours": "કલાક",
+      "present": "હાજર",
+      "halfDay": "અડધો દિવસ",
+      "onLeave": "રજા",
+      "absent": "ગેરહાજર"
+    },
+    "leave": {
+      "title": "રજા રજિસ્ટર",
+      "name": "નામ",
+      "type": "પ્રકાર",
+      "from": "થી",
+      "to": "સુધી",
+      "days": "દિવસ",
+      "status": "સ્થિતિ",
+      "decidedBy": "નિર્ણય",
+      "approvedTotal": "મંજૂર"
+    },
+    "tasks": {
+      "title": "કામનો સારાંશ",
+      "name": "નામ",
+      "open": "ખુલ્લાં",
+      "done": "પૂરાં",
+      "overdue": "મુદત વીતી",
+      "unassigned": "કોઈને નહીં",
+      "total": "કુલ"
+    },
+    "licenses": {
+      "title": "લાઇસન્સ યાદી",
+      "name": "લાઇસન્સ",
+      "vendor": "વેન્ડર",
+      "number": "નંબર",
+      "expiry": "મુદત",
+      "daysLeft": "દિવસ",
+      "owner": "જવાબદાર",
+      "cost": "ખર્ચ",
+      "expired": "પૂરી",
+      "total": "કુલ",
+      "asAt": "બધાં ચાલુ લાઇસન્સ"
     }
   }
 }

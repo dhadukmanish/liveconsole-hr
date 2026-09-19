@@ -33,7 +33,8 @@
     "settings": "Settings",
     "phonebook": "Phone book",
     "licenses": "Licenses",
-    "notifications": "Notifications"
+    "notifications": "Notifications",
+    "reports": "Reports"
   },
   "auth": {
     "signIn": "Sign in",
@@ -368,6 +369,65 @@
       "notifications": "Messages",
       "reminders": "Reminders",
       "backup": "Backup"
+    }
+  },
+  "reports": {
+    "title": "Reports",
+    "pick": "Report",
+    "month": "Month",
+    "from": "From",
+    "to": "To",
+    "show": "Show",
+    "download": "Download PDF",
+    "generatedBy": "Live Console HR · {name}",
+    "scopeOwn": "Your own records",
+    "scopeTeam": "You and your team",
+    "scopeAll": "Everybody",
+    "empty": "Nothing to report for this period",
+    "attendance": {
+      "title": "Attendance register",
+      "name": "Name",
+      "code": "Code",
+      "presentDays": "Days",
+      "leaveDays": "Leave",
+      "hours": "Hours",
+      "present": "present",
+      "halfDay": "half day",
+      "onLeave": "leave",
+      "absent": "absent"
+    },
+    "leave": {
+      "title": "Leave register",
+      "name": "Name",
+      "type": "Type",
+      "from": "From",
+      "to": "To",
+      "days": "Days",
+      "status": "Status",
+      "decidedBy": "Decided by",
+      "approvedTotal": "Approved"
+    },
+    "tasks": {
+      "title": "Task summary",
+      "name": "Name",
+      "open": "Open",
+      "done": "Done",
+      "overdue": "Overdue",
+      "unassigned": "Unassigned",
+      "total": "Total"
+    },
+    "licenses": {
+      "title": "Licence list",
+      "name": "Licence",
+      "vendor": "Vendor",
+      "number": "Number",
+      "expiry": "Expires",
+      "daysLeft": "Days",
+      "owner": "Owner",
+      "cost": "Cost",
+      "expired": "expired",
+      "total": "Total",
+      "asAt": "All active licences"
     }
   }
 }

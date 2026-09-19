@@ -15,6 +15,10 @@ Built so far:
   channel that drains it, click-to-chat where that is quicker, and a delivery log
   for super admins.
 
+- **Reports** — attendance register, leave register, task summary and licence
+  list, each scoped the same way as the rest of the app and downloadable as a
+  PDF.
+
 `BRIEF.md` has the original plan.
 
 Live at **http://task.kriviinfotech.com**.
@@ -90,7 +94,7 @@ prisma/          schema, migrations, seed
 scripts/         local db, icon generation, deploy packaging
 src/app/(auth)/  login
 src/app/(app)/   everything behind a session
-src/app/api/     document streaming, ID card PDF, the three cron routes
+src/app/api/     document streaming, ID card and report PDFs, the three cron routes
 src/lib/         prisma, rbac, scope, storage, auth, audit, validation, reminders,
                  backup, notify (the outbox), messaging (the channels)
 messages/        en / hi / gu (identical key sets)
@@ -153,3 +157,15 @@ server.js        entry point when running from source
   any failure — including the common one where the number simply is not on
   WhatsApp, which Meta only tells you when you try — and the screen says which
   route it took.
+- **Reports are built once and rendered twice.** `report-spec.ts` turns each
+  report into columns and cells; the screen and the PDF both read that, so they
+  cannot disagree about what the report says. The PDF table engine is fifty lines
+  of pdf-lib rather than a dependency — page breaks and column widths are the
+  whole job, and the payload is uploaded over FTP to shared hosting.
+- **A report's scope is re-derived from the session, never from the URL.** The
+  period comes from the query string because a link to "September attendance"
+  should be sendable; whose rows appear does not, so a guessed parameter cannot
+  widen it.
+- **A leave register defaults to the whole month, not up to today.** Stopping at
+  today would hide leave already approved for next week, which is exactly what
+  somebody planning the month is looking for.

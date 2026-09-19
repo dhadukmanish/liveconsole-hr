@@ -27,6 +27,7 @@ export default async function AppLayout({
   ];
 
   const sidebarExtras: NavItem[] = [
+    { href: "/reports", labelKey: "nav.reports", icon: "reports" },
     ...(can(user, "DOCUMENTS", "VIEW")
       ? [{ href: "/documents", labelKey: "nav.documents", icon: "documents" as const }]
       : []),
