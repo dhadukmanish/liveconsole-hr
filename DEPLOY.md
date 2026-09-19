@@ -161,7 +161,11 @@ else in the app is reachable.
 2. Sign in as the SUPERADMIN → forced password change → Home.
 3. Create a user, upload a document, download the ID card PDF.
 4. Chrome on Android → menu → **Add to home screen** should offer to install.
-5. `logs/` should contain a `node` stdout file; check there first when anything
+5. Sign in as an OTP user. The screen says which route the code took — "Code
+   sent on WhatsApp" or "OTP sent to your mobile". If it says neither, nothing
+   could be delivered and the code is in `logs/`, which is what setting up
+   WhatsApp or MSG91 fixes.
+6. `logs/` should contain a `node` stdout file; check there first when anything
    misbehaves.
 
 ## 7. Daily reminders (external cron)
