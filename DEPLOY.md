@@ -192,7 +192,13 @@ To set it up:
    once a day at 09:00 **Asia/Kolkata**, and enable failure notifications.
 3. Run it once by hand and check the response. `{"ok":true,...}` is the
    endpoint working; `{"error":"unauthorized"}` means the token does not match
-   what the host has in `.env`.
+   what the host has in `.env`. Add `&probe=1` when testing: the run still
+   happens, but it is not recorded as the scheduler, so a test call cannot make
+   the app claim a cron job exists when it does not.
+4. Open **Notifications** in the app. It says when the scheduler was last heard
+   from and what each of the three jobs did — the only place that can tell you a
+   job was never created or has quietly stopped, since otherwise a dead
+   scheduler looks exactly like a quiet week.
 
 What it sends:
 
