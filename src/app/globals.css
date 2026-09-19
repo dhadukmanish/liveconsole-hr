@@ -11,7 +11,11 @@
   --muted: #6b6a65;
   --hairline: #ece7df;
   --brand: #f7941d;
-  --brand-hover: #c96e0a;
+  /* The pressed/hover state of the brand button. It used to be #C96E0A, which
+     is a handsome orange and reads 3.81:1 against the ink on top of it — so the
+     label of the app's most-used button dropped below AA the moment a cursor
+     touched it. This is as dark as the hover can go and still clear 4.5:1. */
+  --brand-hover: #e07f0a;
   --danger: #e8412c;
   --pending: #fbb03b;
   --success: #1d9e75;
@@ -26,6 +30,9 @@
   --success-ink: #0f5f46;
   --danger-ink: #a32115;
   --pending-ink: #7a4e00;
+  /* A red dark enough to carry white text. --danger is tuned to be seen as a
+     fill and a border; white on it is 4.02:1, which is not a label. */
+  --danger-strong: #c2291a;
 
   /* Chart colours, in a fixed order that is the colourblind-safety mechanism —
      not a palette to reorder by taste. Every value here was checked with the
@@ -50,11 +57,17 @@
   --hairline: #3a3934;
   /* brand orange is unchanged in dark mode, per the brand spec */
   /* On dark tints the relationship inverts: the bright accents are the
-     readable ones. */
-  --brand-ink: #f7941d;
+     readable ones. Three of these were the accent colour itself, which turned
+     out to be a step too dark: on a 15-20% tint of the same hue over the dark
+     card they measured 3.8-4.0:1, so the badges, the avatars and the chosen
+     permission pills were all just under AA in dark mode and nowhere near it in
+     light. Each is now one step lighter and measured on the surface it is
+     actually painted on. */
+  --brand-ink: #ffb35c;
   --success-ink: #4fd1a5;
-  --danger-ink: #ff8a7a;
-  --pending-ink: #fbb03b;
+  --danger-ink: #ffa99e;
+  --pending-ink: #ffc978;
+  --danger-strong: #c2291a;
 
   /* Dark mode is stepped for the dark card, not flipped: green and yellow hold,
      blue and red and the sequential hue move up to clear the dark band. */
@@ -73,6 +86,7 @@
   --color-brand: var(--brand);
   --color-brand-hover: var(--brand-hover);
   --color-danger: var(--danger);
+  --color-danger-strong: var(--danger-strong);
   --color-pending: var(--pending);
   --color-success: var(--success);
   --color-on-brand: var(--on-brand);

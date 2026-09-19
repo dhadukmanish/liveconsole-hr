@@ -13,9 +13,9 @@ const buttonVariants = cva(
         primary: "bg-brand text-on-brand hover:bg-brand-hover",
         secondary: "bg-card text-ink border border-hairline hover:border-brand",
         ghost: "text-ink hover:bg-hairline/60",
-        danger: "bg-danger text-white hover:brightness-95",
+        danger: "bg-danger-strong text-white hover:brightness-95",
         success: "bg-success text-white hover:brightness-95",
-        link: "text-brand underline underline-offset-4 hover:text-brand-hover",
+        link: "text-brand-ink underline underline-offset-4 hover:brightness-90",
       },
       size: {
         // 48px floor everywhere: the brief asks for >=48px tap targets.

@@ -9,7 +9,7 @@ export function SignOutButton() {
   const t = useTranslations();
   return (
     <form action={signOutAction}>
-      <Button type="submit" variant="secondary" size="lg" className="text-danger">
+      <Button type="submit" variant="secondary" size="lg" className="text-danger-ink">
         <LogOut className="h-5 w-5" aria-hidden />
         {t("auth.signOut")}
       </Button>

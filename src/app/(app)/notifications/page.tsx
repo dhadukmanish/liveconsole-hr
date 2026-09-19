@@ -175,7 +175,7 @@ export default async function NotificationsPage({
                     {row.status === "QUEUED" ? (
                       <form action={cancelNotificationAction}>
                         <input type="hidden" name="notificationId" value={row.id} />
-                        <Button type="submit" variant="ghost" className="text-danger">
+                        <Button type="submit" variant="ghost" className="text-danger-ink">
                           {t("notify.cancel")}
                         </Button>
                       </form>

@@ -59,7 +59,7 @@ export function Field({
       {children}
       {hint && !error ? <p className="mt-1 text-sm text-muted">{hint}</p> : null}
       {error ? (
-        <p className="mt-1 text-sm font-medium text-danger" role="alert">
+        <p className="mt-1 text-sm font-medium text-danger-ink" role="alert">
           {error}
         </p>
       ) : null}

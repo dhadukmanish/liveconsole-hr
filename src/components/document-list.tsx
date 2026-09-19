@@ -58,7 +58,7 @@ export async function DocumentList({
               {canDelete ? (
                 <form action={deleteDocumentAction}>
                   <input type="hidden" name="documentId" value={document.id} />
-                  <Button type="submit" variant="ghost" className="text-danger">
+                  <Button type="submit" variant="ghost" className="text-danger-ink">
                     {t("common.delete")}
                   </Button>
                 </form>
