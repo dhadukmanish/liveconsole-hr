@@ -92,7 +92,8 @@
     "theme": "रूप",
     "themeLight": "उजला",
     "themeDark": "गहरा",
-    "themeSystem": "सिस्टम"
+    "themeSystem": "सिस्टम",
+    "admin": "प्रबंधन"
   },
   "users": {
     "title": "उपयोगकर्ता",

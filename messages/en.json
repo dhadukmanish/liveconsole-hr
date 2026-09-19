@@ -92,7 +92,8 @@
     "theme": "Appearance",
     "themeLight": "Light",
     "themeDark": "Dark",
-    "themeSystem": "System"
+    "themeSystem": "System",
+    "admin": "Administration"
   },
   "users": {
     "title": "Users",

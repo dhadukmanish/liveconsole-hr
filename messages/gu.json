@@ -92,7 +92,8 @@
     "theme": "દેખાવ",
     "themeLight": "આછું",
     "themeDark": "ઘાટું",
-    "themeSystem": "સિસ્ટમ"
+    "themeSystem": "સિસ્ટમ",
+    "admin": "વહીવટ"
   },
   "users": {
     "title": "વપરાશકર્તા",
