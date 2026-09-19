@@ -110,7 +110,12 @@ export function AppShell({
       <div className="flex min-w-0 flex-1 flex-col">
         {/* pb-24 keeps content clear of the fixed tab bar on phones. */}
         <main className="mx-auto w-full max-w-3xl flex-1 px-4 pt-4 pb-24 md:pb-8">
-          {children}
+          {/* Keyed on the path so a soft navigation remounts this and the
+              entrance runs again — without a key React reuses the subtree and
+              the animation only ever plays on the very first load. */}
+          <div key={pathname} className="lc-rise">
+            {children}
+          </div>
         </main>
       </div>
 
@@ -128,11 +133,20 @@ export function AppShell({
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[0.6875rem] font-semibold",
+                    "flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[0.6875rem] font-semibold transition-colors duration-150 active:scale-[0.96]",
                     active ? "text-brand-ink" : "text-muted",
                   )}
                 >
-                  <Icon className="h-6 w-6" aria-hidden />
+                  {/* The active tab's icon lifts a hair. It is the only thing
+                      on the bar that moves, so it reads as "you are here"
+                      rather than as decoration. */}
+                  <Icon
+                    className={cn(
+                      "h-6 w-6 transition-transform duration-200",
+                      active ? "-translate-y-0.5 scale-110" : "",
+                    )}
+                    aria-hidden
+                  />
                   <span className="truncate">{t(item.labelKey)}</span>
                 </Link>
               </li>

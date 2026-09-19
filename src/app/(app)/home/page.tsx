@@ -96,7 +96,7 @@ export default async function HomePage() {
             </Card>
           ) : null}
           <Link href="/leave" className="block">
-            <Card className="h-full transition-colors hover:border-brand">
+            <Card className="h-full transition-[border-color,transform] duration-150 hover:border-brand active:scale-[0.99]">
               <p className={`text-2xl font-bold ${pending > 0 ? "text-brand-ink" : "text-ink"}`}>
                 {pending}
               </p>
@@ -157,14 +157,14 @@ export default async function HomePage() {
       <section className="mt-6">
         <div className="grid gap-3 sm:grid-cols-2">
           <Link href="/more" className="block">
-            <Card className="h-full transition-colors hover:border-brand">
+            <Card className="h-full transition-[border-color,transform] duration-150 hover:border-brand active:scale-[0.99]">
               <CardTitle>{t("more.profile")}</CardTitle>
               <CardMuted className="mt-1">{t("more.idCard")} · {t("more.documents")}</CardMuted>
             </Card>
           </Link>
           {can(user, "USERS", "VIEW") ? (
             <Link href="/users" className="block">
-              <Card className="h-full transition-colors hover:border-brand">
+              <Card className="h-full transition-[border-color,transform] duration-150 hover:border-brand active:scale-[0.99]">
                 <CardTitle>{t("nav.users")}</CardTitle>
                 <CardMuted className="mt-1">{peopleCount}</CardMuted>
               </Card>

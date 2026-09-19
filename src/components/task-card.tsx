@@ -21,7 +21,7 @@ export async function TaskCard({ task }: { task: TaskCardData }) {
 
   return (
     <Link href={`/tasks/${task.id}`} className="block">
-      <article className="rounded-xl border border-hairline bg-card p-3 transition-colors hover:border-brand">
+      <article className="rounded-xl border border-hairline bg-card p-3 transition-[border-color,transform] duration-150 hover:border-brand active:scale-[0.99]">
         <div className="flex items-start gap-2">
           <span
             aria-hidden

@@ -40,7 +40,7 @@ export default async function DocumentsIndexPage() {
           {users.map((row) => (
             <li key={row.id}>
               <Link href={`/documents/${row.id}`} className="block">
-                <Card className="flex items-center gap-3 transition-colors hover:border-brand">
+                <Card className="flex items-center gap-3 transition-[border-color,transform] duration-150 hover:border-brand active:scale-[0.99]">
                   <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-brand/15 text-sm font-bold text-brand-ink">
                     {initials(row.name)}
                   </div>

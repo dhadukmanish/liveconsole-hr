@@ -45,7 +45,7 @@ export default async function PermissionsPage({
           <Link
             key={role.id}
             href={`/permissions?role=${role.code}`}
-            className={`flex min-h-12 items-center rounded-xl border px-4 text-sm font-semibold ${
+            className={`flex min-h-12 items-center rounded-xl border px-4 text-sm font-semibold transition-[background-color,border-color,color,transform] duration-150 active:scale-[0.97] ${
               selected?.id === role.id
                 ? "border-brand bg-brand text-on-brand"
                 : "border-hairline bg-card text-ink"

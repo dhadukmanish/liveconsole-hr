@@ -132,6 +132,50 @@
   }
 }
 
+/* Motion. Deliberately small: short, few properties, and only on things the
+   finger just touched or the screen just brought in. A phone on shared hosting
+   has no budget for a spring library, and a 400ms flourish on every screen is
+   something you stop liking on the fiftieth tap of the day.
+
+   Everything below is opacity and transform only — the two properties a browser
+   can animate on the compositor without laying the page out again. */
+:root {
+  /* Decelerating: quick to start, settles softly. */
+  --ease-out: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --motion-fast: 140ms;
+  --motion: 200ms;
+}
+
+@keyframes lc-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@keyframes lc-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* The screen you just navigated to. 6px is enough to read as "this arrived"
+   and small enough not to look like a slide transition. */
+.lc-rise {
+  animation: lc-rise var(--motion) var(--ease-out) both;
+}
+
+.lc-fade {
+  animation: lc-fade var(--motion-fast) var(--ease-out) both;
+}
+
+/* What a <details> panel does when it opens. Height cannot be animated from
+   auto, and interpolate-size is not everywhere yet, so this fades and lifts
+   instead — which is the part the eye actually follows. */
+details[open] > .lc-panel {
+  animation: lc-rise var(--motion-fast) var(--ease-out) both;
+}
+
 /* Respect the OS for users who have not chosen yet: the <html> element gets
    `dark` from a small inline script in layout.tsx, so this is only a fallback
    for the very first paint. */
