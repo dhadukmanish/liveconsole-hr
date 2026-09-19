@@ -77,7 +77,13 @@
     "statUsers": "લોકો",
     "statDocuments": "મારા દસ્તાવેજ",
     "statPending": "બાકી",
-    "statTeam": "મારી ટીમ"
+    "statTeam": "મારી ટીમ",
+    "hours": "કામના કલાક",
+    "last14": "છેલ્લા 14 દિવસ",
+    "teamToday": "આજની ટીમ",
+    "present": "હાજર",
+    "onLeave": "રજા પર",
+    "notIn": "નથી આવ્યા"
   },
   "more": {
     "title": "વધુ",

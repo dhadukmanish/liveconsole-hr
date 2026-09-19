@@ -77,7 +77,13 @@
     "statUsers": "लोग",
     "statDocuments": "मेरे दस्तावेज़",
     "statPending": "लंबित",
-    "statTeam": "मेरी टीम"
+    "statTeam": "मेरी टीम",
+    "hours": "काम के घंटे",
+    "last14": "पिछले 14 दिन",
+    "teamToday": "आज की टीम",
+    "present": "हाज़िर",
+    "onLeave": "छुट्टी पर",
+    "notIn": "नहीं आए"
   },
   "more": {
     "title": "अधिक",

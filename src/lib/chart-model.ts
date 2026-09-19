@@ -183,3 +183,43 @@ export function licenseChart(
     caption: label,
   });
 }
+
+// ------------------------------------------------------------------ dashboard
+
+/** Hours worked per day, for the Home screen. */
+export function hoursChart(
+  trend: { label: string; hours: number }[],
+  label: string,
+): ChartModel {
+  return withMax({
+    shape: "columns",
+    series: [{ label, slot: "seq" }],
+    rows: trend.map((day) => ({ label: day.label, values: [day.hours] })),
+    caption: label,
+  });
+}
+
+/**
+ * Where the team stands today. Part-to-whole out of a known total, so one
+ * stacked bar rather than three numbers pretending to be a chart.
+ */
+export function teamTodayChart(
+  today: { present: number; onLeave: number; notIn: number },
+  labels: { present: string; onLeave: string; notIn: string; people: string },
+): ChartModel {
+  // Three bars rather than one stack of three. A stack of a single row goes
+  // degenerate in the states this chart is looked at most — first thing in the
+  // morning everyone is "not in", and the picture is one block with a legend of
+  // colours that are not on screen. A bar each is readable in every state, needs
+  // no legend, and the row labels say what the colours would have.
+  return withMax({
+    shape: "stacked",
+    series: [{ label: labels.people, slot: "seq" }],
+    caption: labels.people,
+    rows: [
+      { label: labels.present, values: [today.present] },
+      { label: labels.onLeave, values: [today.onLeave] },
+      { label: labels.notIn, values: [today.notIn] },
+    ],
+  });
+}

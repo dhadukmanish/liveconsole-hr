@@ -12,6 +12,9 @@ import { requireUser } from "@/lib/auth/guard";
 import { can } from "@/lib/auth/session";
 import { prisma } from "@/lib/prisma";
 import { visibleUserIds } from "@/lib/scope";
+import { myHoursTrend, pendingForMe, teamToday } from "@/lib/dashboard";
+import { hoursChart, teamTodayChart } from "@/lib/chart-model";
+import { ReportChart } from "@/components/report-chart";
 
 function greetingKey(hour: number) {
   if (hour < 12) return "home.greetingMorning";
@@ -26,11 +29,14 @@ export default async function HomePage() {
   const scope = await visibleUserIds(user);
   const attendanceToday = can(user, "ATTENDANCE", "ADD") ? await todayAttendance(user.id) : null;
   const openTasks = can(user, "TASK", "VIEW") ? await myOpenTasks(user.id) : [];
-  const [peopleCount, myDocuments] = await Promise.all([
+  const [peopleCount, myDocuments, hours, today, pending] = await Promise.all([
     prisma.user.count({
       where: scope === "ALL" ? {} : { id: { in: scope } },
     }),
     prisma.document.count({ where: { userId: user.id } }),
+    can(user, "ATTENDANCE", "VIEW") ? myHoursTrend(user.id) : null,
+    teamToday(user),
+    pendingForMe(user),
   ]);
 
   const teamCount = scope === "ALL" ? peopleCount : Math.max(0, scope.length - 1);
@@ -89,12 +95,35 @@ export default async function HomePage() {
               <CardMuted>{t("home.statTeam")}</CardMuted>
             </Card>
           ) : null}
-          <Card>
-            <p className="text-2xl font-bold text-muted">—</p>
-            <CardMuted>{t("home.statPending")}</CardMuted>
-          </Card>
+          <Link href="/leave" className="block">
+            <Card className="h-full transition-colors hover:border-brand">
+              <p className={`text-2xl font-bold ${pending > 0 ? "text-brand-ink" : "text-ink"}`}>
+                {pending}
+              </p>
+              <CardMuted>{t("home.statPending")}</CardMuted>
+            </Card>
+          </Link>
         </div>
       </section>
+
+      {today ? (
+        <ReportChart
+          model={teamTodayChart(today, {
+            present: t("home.present"),
+            onLeave: t("home.onLeave"),
+            notIn: t("home.notIn"),
+            people: t("home.statUsers"),
+          })}
+          title={t("home.teamToday")}
+        />
+      ) : null}
+
+      {hours && hours.total > 0 ? (
+        <ReportChart
+          model={hoursChart(hours.days, t("home.hours"))}
+          title={`${t("home.hours")} · ${t("home.last14")}`}
+        />
+      ) : null}
 
       <section>
         <div className="mb-2 flex items-center justify-between">

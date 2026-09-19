@@ -77,7 +77,13 @@
     "statUsers": "People",
     "statDocuments": "My documents",
     "statPending": "Pending",
-    "statTeam": "My team"
+    "statTeam": "My team",
+    "hours": "Hours worked",
+    "last14": "Last 14 days",
+    "teamToday": "Team today",
+    "present": "In",
+    "onLeave": "On leave",
+    "notIn": "Not in"
   },
   "more": {
     "title": "More",

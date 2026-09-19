@@ -163,17 +163,41 @@ function StackedBars({ model, label }: { model: ChartModel; label: string }) {
 
 /** Columns, for a count over time where the axis is months rather than names. */
 function Columns({ model, label }: { model: ChartModel; label: string }) {
-  const columnWidth = 24;
-  const gap = 10;
+  // The columns are sized to fill a fixed plot width rather than the other way
+  // round: twelve months at a fixed 24px each made a canvas wider than a phone,
+  // and an SVG scaled to fit shrinks its labels with it.
+  const count = Math.max(model.rows.length, 1);
+  const gap = count > 16 ? 3 : count > 8 ? 5 : 10;
+  const columnWidth = Math.max(8, (PLOT_WIDTH + LABEL_WIDTH - gap * (count - 1)) / count);
   const plotHeight = 110;
   const labelHeight = 26;
   /** Headroom for the value above the tallest column, which would otherwise be
       drawn above the canvas and clipped. */
   const headroom = 14;
-  const width = model.rows.length * (columnWidth + gap);
+  const width = count * columnWidth + gap * (count - 1);
   const height = headroom + plotHeight + labelHeight;
   const scale = model.max > 0 ? plotHeight / model.max : 0;
   const baseline = headroom + plotHeight;
+
+  /**
+   * Which columns get a number on the cap. Up to eight, all of them. Past that
+   * the caps are 15px apart and a number on each is a row of noise — and when
+   * most days are identical it is the repeated value that gets labelled while
+   * the one short day, the only thing worth looking at, gets nothing. So label
+   * the extremes instead: the first tallest column and the first shortest one
+   * that still has something in it.
+   */
+  const values = model.rows.map((row) => row.values[0]);
+  const lowest = Math.min(...values.filter((value) => value > 0), model.max);
+  const labelled = new Set<number>();
+  if (values.length <= 8) {
+    values.forEach((value, index) => value > 0 && labelled.add(index));
+  } else {
+    const tallest = values.indexOf(model.max);
+    if (tallest >= 0) labelled.add(tallest);
+    const shortest = values.indexOf(lowest);
+    if (shortest >= 0) labelled.add(shortest);
+  }
 
   return (
     <svg
@@ -206,8 +230,7 @@ function Columns({ model, label }: { model: ChartModel; label: string }) {
                 <title>{`${row.label}: ${value}`}</title>
               </path>
             ) : null}
-            {/* Only label a column that has something in it. */}
-            {value > 0 ? (
+            {labelled.has(index) ? (
               <text
                 x={x + columnWidth / 2}
                 y={baseline - barHeight - 5}
@@ -219,9 +242,9 @@ function Columns({ model, label }: { model: ChartModel; label: string }) {
             ) : null}
             <text
               x={x + columnWidth / 2}
-              y={baseline + 14}
+              y={baseline + 13}
               textAnchor="middle"
-              className="fill-muted text-[9px]"
+              className={columnWidth < 14 ? "fill-muted text-[8px]" : "fill-muted text-[9px]"}
             >
               {row.label}
             </text>
