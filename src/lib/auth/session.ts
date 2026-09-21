@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 import type { PermissionAction, PermissionModule } from "@prisma/client";
@@ -77,76 +78,144 @@ export async function createSession(
  * blocking or deactivating a user takes effect immediately instead of when some
  * token happens to expire.
  */
-export async function getCurrentUser(): Promise<CurrentUser | null> {
+/** The shape the one identity query returns. */
+type SessionRow = {
+  sessionId: string;
+  expiresAt: Date;
+  revokedAt: Date | null;
+  lastSeenAt: Date;
+  id: string;
+  name: string;
+  mobile: string;
+  email: string | null;
+  roleId: string;
+  managerId: string | null;
+  locale: string;
+  themePref: string;
+  mustChangePassword: boolean;
+  loginMethod: "OTP" | "PASSWORD";
+  status: string;
+  roleCode: string;
+  roleName: string;
+  employeeCode: string | null;
+  designation: string | null;
+  department: string | null;
+  photoPath: string | null;
+  rolePermissions: { module: PermissionModule; action: PermissionAction; allowed: boolean }[] | null;
+  userOverrides: { module: PermissionModule; action: PermissionAction; allowed: boolean }[] | null;
+};
+
+/**
+ * Resolves the caller from their cookie on every request. Status is re-read from
+ * the database each time, which is the whole point of server-side sessions:
+ * blocking or deactivating a user takes effect immediately instead of when some
+ * token happens to expire.
+ *
+ * One query, deliberately. Prisma's nested include for the same data issued
+ * seven — session, user, role, role permissions, the permission catalogue, the
+ * user's overrides, the profile — and this runs on every page and every action.
+ * Against a database on the same machine that is free; against the host's,
+ * which is not, it was most of the wait before a screen appeared at all.
+ *
+ * This is the uncached read. getCurrentUser below memoises it for rendering.
+ */
+export async function readCurrentUser(): Promise<CurrentUser | null> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
-  const session = await prisma.session.findUnique({
-    where: { tokenHash: hashToken(token) },
-    include: {
-      user: {
-        include: {
-          role: { include: { permissions: { include: { permission: true } } } },
-          permissions: { include: { permission: true } },
-          profile: true,
-        },
-      },
-    },
-  });
+  const rows = await prisma.$queryRaw<SessionRow[]>`
+    SELECT
+      s.id            AS "sessionId",
+      s."expiresAt",
+      s."revokedAt",
+      s."lastSeenAt",
+      u.id, u.name, u.mobile, u.email, u."roleId", u."managerId",
+      u.locale, u."themePref", u."mustChangePassword",
+      u."loginMethod"::text AS "loginMethod",
+      u.status::text        AS "status",
+      r.code AS "roleCode",
+      r.name AS "roleName",
+      p."employeeCode", p.designation, p.department, p."photoPath",
+      (
+        SELECT json_agg(json_build_object(
+          'module', pm.module, 'action', pm.action, 'allowed', rp.allowed))
+        FROM role_permissions rp
+        JOIN permissions pm ON pm.id = rp."permissionId"
+        WHERE rp."roleId" = u."roleId"
+      ) AS "rolePermissions",
+      (
+        SELECT json_agg(json_build_object(
+          'module', pm.module, 'action', pm.action, 'allowed', up.allowed))
+        FROM user_permissions up
+        JOIN permissions pm ON pm.id = up."permissionId"
+        WHERE up."userId" = u.id
+      ) AS "userOverrides"
+    FROM sessions s
+    JOIN users u ON u.id = s."userId"
+    JOIN roles r ON r.id = u."roleId"
+    LEFT JOIN employee_profiles p ON p."userId" = u.id
+    WHERE s."tokenHash" = ${hashToken(token)}
+    LIMIT 1
+  `;
 
-  if (!session || session.revokedAt || session.expiresAt.getTime() < Date.now()) {
-    return null;
-  }
-  if (session.user.status !== "ACTIVE") return null;
+  const row = rows[0];
+  if (!row || row.revokedAt || row.expiresAt.getTime() < Date.now()) return null;
+  if (row.status !== "ACTIVE") return null;
 
-  // Cheap sliding "last seen"; the 30-day expiry itself is fixed.
-  if (Date.now() - session.lastSeenAt.getTime() > 3_600_000) {
-    await prisma.session
-      .update({ where: { id: session.id }, data: { lastSeenAt: new Date() } })
+  // Cheap sliding "last seen"; the 30-day expiry itself is fixed. Not awaited:
+  // nothing on the page depends on it, and it is one more round trip.
+  if (Date.now() - row.lastSeenAt.getTime() > 3_600_000) {
+    void prisma.session
+      .update({ where: { id: row.sessionId }, data: { lastSeenAt: new Date() } })
       .catch(() => undefined);
   }
 
-  const user = session.user;
   const permissions = effectivePermissions({
-    roleCode: user.role.code,
-    rolePermissions: user.role.permissions.map((row) => ({
-      module: row.permission.module,
-      action: row.permission.action,
-      allowed: row.allowed,
-    })),
-    userOverrides: user.permissions.map((row) => ({
-      module: row.permission.module,
-      action: row.permission.action,
-      allowed: row.allowed,
-    })),
+    roleCode: row.roleCode,
+    rolePermissions: row.rolePermissions ?? [],
+    userOverrides: row.userOverrides ?? [],
   });
 
   return {
-    id: user.id,
-    name: user.name,
-    mobile: user.mobile,
-    email: user.email,
-    roleId: user.roleId,
-    roleCode: user.role.code,
-    roleName: user.role.name,
-    managerId: user.managerId,
-    locale: isLocale(user.locale) ? user.locale : defaultLocale,
-    themePref: user.themePref,
-    mustChangePassword: user.mustChangePassword,
-    loginMethod: user.loginMethod,
+    id: row.id,
+    name: row.name,
+    mobile: row.mobile,
+    email: row.email,
+    roleId: row.roleId,
+    roleCode: row.roleCode,
+    roleName: row.roleName,
+    managerId: row.managerId,
+    locale: isLocale(row.locale) ? row.locale : defaultLocale,
+    themePref: row.themePref,
+    mustChangePassword: row.mustChangePassword,
+    loginMethod: row.loginMethod,
     permissions,
-    isSuperAdmin: user.role.code === ROLE_SUPERADMIN,
-    profile: user.profile
+    isSuperAdmin: row.roleCode === ROLE_SUPERADMIN,
+    // A row with no profile still joins; the columns are simply null.
+    profile: row.employeeCode || row.designation || row.department || row.photoPath
       ? {
-          employeeCode: user.profile.employeeCode,
-          designation: user.profile.designation,
-          department: user.profile.department,
-          photoPath: user.profile.photoPath,
+          employeeCode: row.employeeCode,
+          designation: row.designation,
+          department: row.department,
+          photoPath: row.photoPath,
         }
       : null,
   };
 }
+
+/**
+ * The memoised version, for rendering. A layout and the page inside it both ask
+ * who is signed in; this makes that one query.
+ *
+ * Server actions must NOT use it, and call readCurrentUser directly instead.
+ * A Server Action and the re-render that follows its revalidate happen inside
+ * the same request, so the memo survives across the two: an action that reads
+ * the user, changes that user's own row and revalidates would hand the fresh
+ * render the row as it was before the change. Switching the language did
+ * exactly that — the database said Gujarati and the screen stayed English.
+ */
+export const getCurrentUser = cache(readCurrentUser);
 
 export async function destroyCurrentSession(): Promise<void> {
   const store = await cookies();

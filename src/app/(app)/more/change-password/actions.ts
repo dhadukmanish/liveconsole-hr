@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { requireUser } from "@/lib/auth/guard";
+import { requireUserAction } from "@/lib/auth/guard";
 import { hashPassword, verifyPassword } from "@/lib/auth/password";
 import { destroyCurrentSession, revokeAllSessions } from "@/lib/auth/session";
 import { writeAudit } from "@/lib/audit";
@@ -14,7 +14,7 @@ export async function changePasswordAction(
   _prev: ChangePasswordState,
   formData: FormData,
 ): Promise<ChangePasswordState> {
-  const user = await requireUser();
+  const user = await requireUserAction();
 
   const current = String(formData.get("currentPassword") ?? "");
   const next = String(formData.get("newPassword") ?? "");

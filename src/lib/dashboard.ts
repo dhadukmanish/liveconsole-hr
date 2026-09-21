@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import type { CurrentUser } from "@/lib/auth/session";
 import { can } from "@/lib/auth/session";
@@ -50,10 +51,9 @@ export async function teamToday(actor: CurrentUser): Promise<TeamToday | null> {
   if (scope !== "ALL" && scope.length <= 1) return null;
 
   const today = workDateFor();
-  const where = scope === "ALL" ? {} : { id: { in: scope } };
 
-  const [total, attendance, leave] = await Promise.all([
-    prisma.user.count({ where: { ...where, status: "ACTIVE" } }),
+  const [counts, attendance, leave] = await Promise.all([
+    peopleCounts(actor),
     prisma.attendance.findMany({
       where: {
         workDate: today,
@@ -82,8 +82,39 @@ export async function teamToday(actor: CurrentUser): Promise<TeamToday | null> {
 
   const present = presentIds.size;
   const onLeave = onLeaveIds.size;
-  return { present, onLeave, notIn: Math.max(0, total - present - onLeave), total };
+  return {
+    present,
+    onLeave,
+    notIn: Math.max(0, counts.active - present - onLeave),
+    total: counts.active,
+  };
 }
+
+/**
+ * How many people this person can see, and how many of those are active. Two
+ * separate counts is two round trips for one row of numbers, and the Home
+ * screen wants both — the stat tile the first, the team chart the second.
+ * Memoised so the two sections that ask do not ask twice.
+ */
+export const peopleCounts = cache(async function peopleCounts(
+  actor: CurrentUser,
+): Promise<{ total: number; active: number }> {
+  const scope = await visibleUserIds(actor);
+  const rows =
+    scope === "ALL"
+      ? await prisma.$queryRaw<{ total: bigint; active: bigint }[]>`
+          SELECT count(*) AS total,
+                 count(*) FILTER (WHERE status = 'ACTIVE') AS active
+          FROM users
+        `
+      : await prisma.$queryRaw<{ total: bigint; active: bigint }[]>`
+          SELECT count(*) AS total,
+                 count(*) FILTER (WHERE status = 'ACTIVE') AS active
+          FROM users
+          WHERE id = ANY(${scope})
+        `;
+  return { total: Number(rows[0]?.total ?? 0), active: Number(rows[0]?.active ?? 0) };
+});
 
 /**
  * What is waiting on this person: leave they have to decide, and their own
@@ -92,18 +123,25 @@ export async function teamToday(actor: CurrentUser): Promise<TeamToday | null> {
  */
 export async function pendingForMe(actor: CurrentUser): Promise<number> {
   const scope = await visibleUserIds(actor);
+  const decides = can(actor, "LEAVE", "APPROVE");
 
-  const [toDecide, mine] = await Promise.all([
-    can(actor, "LEAVE", "APPROVE")
-      ? prisma.leaveRequest.count({
-          where: {
-            status: "PENDING",
-            userId: { not: actor.id, ...(scope === "ALL" ? {} : { in: scope }) },
-          },
-        })
-      : Promise.resolve(0),
-    prisma.leaveRequest.count({ where: { userId: actor.id, status: "PENDING" } }),
-  ]);
-
-  return toDecide + mine;
+  // One count, not two. Both halves are "pending leave that is this person's
+  // problem"; asking the database twice for that was two round trips to say
+  // one number.
+  const rows = await prisma.$queryRaw<{ count: bigint }[]>`
+    SELECT count(*) AS count
+    FROM leave_requests
+    WHERE status = 'PENDING'
+      AND (
+        "userId" = ${actor.id}
+        OR (
+          ${decides}::boolean
+          AND "userId" <> ${actor.id}
+          AND (${scope === "ALL"}::boolean OR "userId" = ANY(${
+            scope === "ALL" ? [] : scope
+          }))
+        )
+      )
+  `;
+  return Number(rows[0]?.count ?? 0);
 }

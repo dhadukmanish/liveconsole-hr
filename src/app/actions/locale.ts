@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { getCurrentUser, setLocaleCookie } from "@/lib/auth/session";
+import { readCurrentUser, setLocaleCookie } from "@/lib/auth/session";
 import { localeSchema } from "@/lib/validation";
 
 /**
@@ -15,7 +15,7 @@ export async function changeLocale(formData: FormData) {
 
   await setLocaleCookie(parsed.data);
 
-  const user = await getCurrentUser();
+  const user = await readCurrentUser();
   if (user) {
     await prisma.user.update({ where: { id: user.id }, data: { locale: parsed.data } });
   }
@@ -31,7 +31,7 @@ export async function changeTheme(formData: FormData) {
   const store = await cookies();
   store.set("lc_theme", value, { path: "/", maxAge: 365 * 86_400, sameSite: "lax" });
 
-  const user = await getCurrentUser();
+  const user = await readCurrentUser();
   if (user) {
     await prisma.user.update({ where: { id: user.id }, data: { themePref: value } });
   }

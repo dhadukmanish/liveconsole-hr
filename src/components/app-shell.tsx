@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Users,
 } from "lucide-react";
+import { NavPending } from "@/components/nav-pending";
 import { cn } from "@/lib/utils";
 
 export type NavItem = {
@@ -90,12 +91,13 @@ export function AppShell({
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex min-h-12 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-colors",
+                    "relative flex min-h-12 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition-colors",
                     active
                       ? "bg-brand text-on-brand"
                       : "text-ink hover:bg-hairline/60",
                   )}
                 >
+                  <NavPending className="inset-x-2" />
                   <Icon className="h-5 w-5 shrink-0" aria-hidden />
                   <span className="truncate">{t(item.labelKey)}</span>
                 </Link>
@@ -133,10 +135,11 @@ export function AppShell({
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[0.6875rem] font-semibold transition-colors duration-150 active:scale-[0.96]",
+                    "relative flex min-h-14 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[0.6875rem] font-semibold transition-colors duration-150 active:scale-[0.96]",
                     active ? "text-brand-ink" : "text-muted",
                   )}
                 >
+                  <NavPending />
                   {/* The active tab's icon lifts a hair. It is the only thing
                       on the bar that moves, so it reads as "you are here"
                       rather than as decoration. */}
