@@ -186,6 +186,54 @@ jobs:
       # Last on purpose: the step above dumps the whole page body, and a
       # verdict printed after thousands of lines of RSC payload cannot be read
       # without downloading the entire log.
+      # "It opens slowly when I tap" is the complaint that matters most, and it
+      # is the one nothing here has ever measured. Three URLs separate the three
+      # things that could be spending the time:
+      #
+      #   a static file   IIS reads a file off disk — network and the web server
+      #   /api/build      Node runs, touches no database — the app itself
+      #   /login          Node runs and queries Postgres, on another host
+      #
+      # Ten of each, because the first request after the pool has gone idle pays
+      # for a cold start and the rest do not; an average alone would hide it.
+      - name: How slow is it, really
+        env:
+          HOST_NAME: ${{ vars.SITE_HOST || 'task.kriviinfotech.com' }}
+        run: |
+          set +e
+          css=$(curl -s --max-time 30 "http://$HOST_NAME/login" \
+                | grep -o '/_next/static/css/[a-z0-9]*\.css' | head -1)
+          echo "static asset: ${css:-none found}"
+          echo
+
+          probe() {
+            label="$1"; url="$2"
+            printf '%-26s' "$label"
+            first=""
+            for i in $(seq 1 10); do
+              ms=$(curl -s -o /dev/null -w '%{time_starttransfer}' --max-time 60 "$url")
+              ms=$(awk -v t="$ms" 'BEGIN { printf "%d", t * 1000 }')
+              [ -z "$first" ] && first=$ms
+              printf '%5s' "$ms"
+              echo "$ms" >> /tmp/samples
+            done
+            sorted=$(sort -n /tmp/samples)
+            med=$(echo "$sorted" | awk '{ a[NR]=$1 } END { print a[int(NR/2)+1] }')
+            worst=$(echo "$sorted" | tail -1)
+            printf '   | first %sms  median %sms  worst %sms\n' "$first" "$med" "$worst"
+            rm -f /tmp/samples
+          }
+
+          echo "                           ten requests, milliseconds to first byte"
+          [ -n "$css" ] && probe "static file (IIS)" "http://$HOST_NAME$css"
+          probe "/api/build (no database)" "http://$HOST_NAME/api/build"
+          probe "/login (queries Postgres)" "http://$HOST_NAME/login"
+
+          echo
+          echo "The gap between the static file and /api/build is the Node app."
+          echo "The gap between /api/build and /login is the database round trip."
+          exit 0
+
       - name: Smoke-test the live routes
         env:
           HOST_NAME: ${{ vars.SITE_HOST || 'task.kriviinfotech.com' }}
