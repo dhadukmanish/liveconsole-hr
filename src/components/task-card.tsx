@@ -20,7 +20,14 @@ export async function TaskCard({ task }: { task: TaskCardData }) {
   const overdue = Boolean(task.dueDate && !task.isTerminal && task.dueDate < workDateFor());
 
   return (
-    <Link href={`/tasks/${task.id}`} className="block">
+    // prefetch={false}: one row in a list, and a list here runs to fifty rows.
+    // Once a route has a loading boundary Next prefetches every link on screen,
+    // and over http a browser holds six connections to one host — so fifty
+    // prefetches do not warm the app, they queue in front of the tap the person
+    // actually made. Measured on the board: the navigation the tap started came
+    // back as net::ERR_ABORTED and the screen never changed at all. Prefetching
+    // is worth it on the handful of links everyone uses, not on rows.
+    <Link href={`/tasks/${task.id}`} prefetch={false} className="block">
       <article className="rounded-xl border border-hairline bg-card p-3 transition-[border-color,transform] duration-150 hover:border-brand active:scale-[0.99]">
         <div className="flex items-start gap-2">
           <span

@@ -75,6 +75,7 @@ export default async function LicensesPage() {
                   {canEdit ? (
                     <Link
                       href={`/licenses/${license.id}`}
+                      prefetch={false}
                       className="mt-1.5 block text-sm font-semibold text-brand-ink underline underline-offset-4"
                     >
                       {t("common.edit")}
