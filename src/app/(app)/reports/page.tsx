@@ -191,7 +191,7 @@ async function AttendanceTable({ user, month }: { user: Actor; month: string }) 
         <table className="min-w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-hairline text-left">
-              <th className="sticky left-0 bg-page py-2 pr-3 font-bold text-ink">
+              <th className="sticky left-0 border-r border-hairline bg-page py-2 pr-3 font-bold text-ink">
                 {t("reports.attendance.name")}
               </th>
               {days.map((day) => (
@@ -212,7 +212,7 @@ async function AttendanceTable({ user, month }: { user: Actor; month: string }) 
               <tr key={row.userId} className="border-b border-hairline/60">
                 <th
                   scope="row"
-                  className="sticky left-0 whitespace-nowrap bg-page py-2 pr-3 text-left font-semibold text-ink"
+                  className="sticky left-0 whitespace-nowrap border-r border-hairline/60 bg-page py-2 pr-3 text-left font-semibold text-ink"
                 >
                   {row.name}
                 </th>

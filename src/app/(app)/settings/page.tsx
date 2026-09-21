@@ -51,7 +51,13 @@ export default async function SettingsPage({
     <>
       <PageHeader title={t("settings.title")} />
 
-      <nav className="lc-scroll-hint mb-4 -mx-4 flex gap-2 overflow-x-auto px-4">
+      {/* Pinned: these lists run for screens, and the control that changes
+          which list you are looking at should not be one of the things you
+          have to scroll back to find. Two elements rather than one — the outer
+          carries the solid page colour, because the scroller paints only its
+          edge shadows and is transparent in between. */}
+      <div className="sticky top-0 z-10 -mx-4 mb-4 bg-page px-4 pt-2">
+        <nav className="lc-scroll-hint -mx-4 flex gap-2 overflow-x-auto px-4 pb-2">
         {TABS.map((entry) => (
           <Link
             key={entry.kind}
@@ -65,7 +71,8 @@ export default async function SettingsPage({
             {t(entry.titleKey as "settings.documentTypes")}
           </Link>
         ))}
-      </nav>
+        </nav>
+      </div>
 
       {active.kind === "documentType" ? (
         <MasterEditor

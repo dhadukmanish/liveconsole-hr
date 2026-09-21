@@ -90,8 +90,14 @@ export default async function PhonebookPage({
         />
       </form>
 
+      {/* Pinned: these lists run for screens, and the control that changes
+          which list you are looking at should not be one of the things you
+          have to scroll back to find. Two elements rather than one — the outer
+          carries the solid page colour, because the scroller paints only its
+          edge shadows and is transparent in between. */}
       {categories.length > 0 ? (
-        <div className="lc-scroll-hint -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1">
+        <div className="sticky top-0 z-10 -mx-4 mb-4 bg-page px-4 pt-2">
+          <div className="lc-scroll-hint -mx-4 flex gap-2 overflow-x-auto px-4 pb-2">
           <Link href={query ? `/phonebook?q=${encodeURIComponent(query)}` : "/phonebook"} className={chip(!category)}>
             {t("phonebook.allCategories")}
           </Link>
@@ -104,6 +110,7 @@ export default async function PhonebookPage({
               </Link>
             );
           })}
+          </div>
         </div>
       ) : null}
 

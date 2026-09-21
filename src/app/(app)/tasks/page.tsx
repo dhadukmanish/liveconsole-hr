@@ -94,8 +94,18 @@ export default async function TasksPage({
       {tasks.length === 0 ? <EmptyState className="mb-4">{t("tasks.none")}</EmptyState> : null}
 
       {/* The phone's column picker. Every status with its count, so the shape
-          of the board is legible without swiping through it. */}
-      <div className="lc-scroll-hint -mx-4 mb-3 flex gap-2 overflow-x-auto px-4 pb-1 md:hidden">
+          of the board is legible without swiping through it.
+
+          It stays at the top of the screen once you scroll past it: fifty
+          tasks is six screens of scrolling, and without this, changing column
+          meant scrolling all the way back up to reach the control — the list
+          was longest in exactly the case where you most want to switch.
+
+          Two elements rather than one: the outer carries the solid page
+          colour, because the scroller paints only its edge shadows through the
+          `background` shorthand and is transparent in between. */}
+      <div className="sticky top-0 z-10 -mx-4 mb-3 bg-page px-4 pt-2 md:hidden">
+        <div className="lc-scroll-hint -mx-4 flex gap-2 overflow-x-auto px-4 pb-2">
         {statuses.map((status) => {
           const column = byStatus.get(status.id) ?? [];
           const active = shown?.id === status.id;
@@ -123,6 +133,7 @@ export default async function TasksPage({
             </Link>
           );
         })}
+        </div>
       </div>
 
       {/* One column per status, always rendered: an empty board should still

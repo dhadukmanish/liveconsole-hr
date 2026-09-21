@@ -113,7 +113,13 @@ export default async function NotificationsPage({
         </Card>
       ) : null}
 
-      <div className="lc-scroll-hint -mx-4 mb-4 flex gap-2 overflow-x-auto px-4 pb-1">
+      {/* Pinned: these lists run for screens, and the control that changes
+          which list you are looking at should not be one of the things you
+          have to scroll back to find. Two elements rather than one — the outer
+          carries the solid page colour, because the scroller paints only its
+          edge shadows and is transparent in between. */}
+      <div className="sticky top-0 z-10 -mx-4 mb-4 bg-page px-4 pt-2">
+        <div className="lc-scroll-hint -mx-4 flex gap-2 overflow-x-auto px-4 pb-2">
         <Link href="/notifications" className={chip(!filter)}>
           {t("notify.all")}
         </Link>
@@ -126,6 +132,7 @@ export default async function NotificationsPage({
             {t(LABEL[value])} {countFor(value)}
           </Link>
         ))}
+        </div>
       </div>
 
       {rows.length === 0 ? (

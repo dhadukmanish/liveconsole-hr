@@ -4,6 +4,7 @@ import { useActionState, useRef } from "react";
 import { useTranslations } from "next-intl";
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { ActionBar } from "@/components/ui/action-bar";
 import type { PermissionsState } from "@/app/(app)/permissions/actions";
 
 export type GridCell = { module: string; action: string; allowed: boolean };
@@ -180,14 +181,14 @@ export function RolePermissionGrid({
         ))}
       </div>
 
-      {/* Sticky so the phone never has to scroll eight module cards back down
-          to save. bottom-20 clears the tab bar; the tinted backdrop keeps the
-          cards from showing through the gap around the button. */}
-      <div className="sticky bottom-20 z-10 -mx-1 mt-4 rounded-xl bg-card/85 px-1 py-2 backdrop-blur-sm md:bottom-2">
+      {/* Docked, so the phone never has to scroll eight module cards back down
+          to save — and so the bar is in the same place at every scroll
+          position. See ActionBar for what the sticky version did instead. */}
+      <ActionBar>
         <Button type="submit" size="lg" disabled={pending}>
           {pending ? t("common.loading") : t("common.save")}
         </Button>
-      </div>
+      </ActionBar>
     </form>
   );
 }
@@ -324,11 +325,11 @@ export function UserPermissionGrid({
         })}
       </div>
 
-      <div className="sticky bottom-20 z-10 -mx-1 mt-4 rounded-xl bg-card/85 px-1 py-2 backdrop-blur-sm md:bottom-2">
+      <ActionBar>
         <Button type="submit" size="lg" disabled={pending}>
           {pending ? t("common.loading") : t("common.save")}
         </Button>
-      </div>
+      </ActionBar>
     </form>
   );
 }

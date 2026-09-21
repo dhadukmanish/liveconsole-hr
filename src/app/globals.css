@@ -162,6 +162,14 @@
   --lc-edge: rgb(0 0 0 / 0.13);
 }
 
+@keyframes lc-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Kept for the <details> panel below, which has nothing positioned against the
+   viewport inside it and so can afford the transform. */
 @keyframes lc-rise {
   from {
     opacity: 0;
@@ -169,16 +177,20 @@
   }
 }
 
-@keyframes lc-fade {
-  from {
-    opacity: 0;
-  }
-}
-
-/* The screen you just navigated to. 6px is enough to read as "this arrived"
-   and small enough not to look like a slide transition. */
+/* The screen you just navigated to.
+ *
+ * This used to lift 6px as it faded in, which cost more than it was worth: an
+ * element with a transform becomes the containing block for every `fixed`
+ * descendant, so for the 200ms of the entrance a bar docked to the bottom of
+ * the screen was docked to the bottom of the page content instead, and then
+ * snapped into place when the animation ended. A jump on every navigation, to
+ * pay for 6px nobody was going to notice.
+ *
+ * A fade alone reads as "this arrived" just as well, and leaves the page
+ * without a transform, so anything inside it can position against the
+ * viewport. */
 .lc-rise {
-  animation: lc-rise var(--motion) var(--ease-out) both;
+  animation: lc-fade var(--motion) var(--ease-out) both;
 }
 
 .lc-fade {
