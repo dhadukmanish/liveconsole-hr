@@ -671,15 +671,50 @@ jobs:
         # with everything else, near the start, when the files it is meant to
         # bring into service are not there yet.
         run: |
+          # The content has to differ, not just the timestamp. Re-uploading the
+          # same bytes changed nothing: the host answered from the same process,
+          # still missing a route this build added. Shared hosting often has
+          # file-change notification turned down, and a byte-identical file is
+          # the easiest thing for it to ignore. The commit goes in a comment, so
+          # every deploy writes a web.config the host has not seen before — and
+          # the file on the host then says which deploy last touched it.
+          # The comment goes inside <configuration>, where a comment is valid
+          # beyond argument. A malformed web.config is a 500.19 on every
+          # request, which is not a thing to risk for a marker.
+          stamp="<!-- deployed $(git rev-parse HEAD) at $(date -u +%Y-%m-%dT%H:%M:%SZ) -->"
+          python3 - "$stamp" <<'PY'
+          import sys, xml.etree.ElementTree as ET
+          stamp = sys.argv[1]
+          src = open("web.config", encoding="utf-8").read()
+          out = src.replace("</configuration>", f"  {stamp}\n</configuration>")
+          # Parse before sending it: a file that does not parse takes the site
+          # down until somebody uploads a good one by hand.
+          ET.fromstring(out)
+          open("web.config", "w", encoding="utf-8").write(out)
+          print("web.config stamped and still valid XML")
+          PY
           node scripts/ftp-deploy.mjs --put web.config --as web.config
-          echo "web.config rewritten; waiting for the app to come back"
-          for i in $(seq 1 12); do
+
+          echo "waiting for the app to come back on the new build"
+          base="http://${{ vars.SITE_HOST || 'task.kriviinfotech.com' }}"
+          want=$(git rev-parse HEAD | cut -c1-7)
+          live=""
+          for i in $(seq 1 18); do
             sleep 10
-            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 \
-              "http://${{ vars.SITE_HOST || 'task.kriviinfotech.com' }}/login")
-            echo "  attempt $i: /login -> $code"
-            [ "$code" = "200" ] && break
+            code=$(curl -s -o /tmp/b.json -w '%{http_code}' --max-time 30 "$base/api/build")
+            live=$(sed -n 's/.*"sha":"\([^"]*\)".*/\1/p' /tmp/b.json)
+            echo "  attempt $i: /api/build -> $code ${live:+sha=$live}"
+            [ "$live" = "$want" ] && break
           done
+
+          if [ "$live" = "$want" ]; then
+            echo "::notice::The host is now running $want."
+          else
+            # Not a failure of the upload — the files are there. It means the
+            # host did not pick them up, which is worth saying out loud rather
+            # than reporting a deploy that has not taken effect.
+            echo "::warning::Uploaded $want, but the host is still serving ${live:-an older build}. The app pool has not recycled."
+          fi
 
       - name: Check the site answers
         env:
