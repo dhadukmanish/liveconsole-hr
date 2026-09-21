@@ -47,7 +47,7 @@ export function MasterEditor({
 
   return (
     <section>
-      <h2 className="mb-2 text-sm font-bold text-muted uppercase">{title}</h2>
+      <h2 className="mb-2 lc-section-label">{title}</h2>
 
       <ul className="mb-4 flex flex-col gap-2">
         {rows.map((row) => (

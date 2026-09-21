@@ -6,15 +6,21 @@ const buttonVariants = cva(
   // A press is worth acknowledging on a touch screen, where there is no cursor
   // and no hover to tell you the finger landed on the button. 2% and 140ms:
   // enough to feel, not enough to notice as an animation.
-  "inline-flex items-center justify-center gap-2 rounded-xl font-semibold transition-[background-color,border-color,color,transform,filter] duration-150 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
+  //
+  // rounded-md rather than rounded-xl, and a shadow under the filled variants,
+  // both from the boilerplate: its buttons read as controls rather than as
+  // pills, and on a screen with this many of them that is the difference
+  // between a tool and a toy. The 48px floor in the sizes below is ours and
+  // stays — that one is a phone rule, not a matter of taste.
+  "inline-flex items-center justify-center gap-2 rounded-md font-semibold transition-[background-color,border-color,color,transform,filter] duration-150 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 disabled:active:scale-100 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand",
   {
     variants: {
       variant: {
-        primary: "bg-brand text-on-brand hover:bg-brand-hover",
-        secondary: "bg-card text-ink border border-hairline hover:border-brand",
+        primary: "bg-brand text-on-brand shadow-card hover:bg-brand-hover",
+        secondary: "bg-card text-ink border border-hairline shadow-card hover:bg-accent",
         ghost: "text-ink hover:bg-hairline/60",
-        danger: "bg-danger-strong text-white hover:brightness-95",
-        success: "bg-success text-white hover:brightness-95",
+        danger: "bg-danger-strong text-white shadow-card hover:brightness-95",
+        success: "bg-success text-white shadow-card hover:brightness-95",
         link: "text-brand-ink underline underline-offset-4 hover:brightness-90",
       },
       size: {

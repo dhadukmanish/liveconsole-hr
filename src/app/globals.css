@@ -5,24 +5,52 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --page: #fff8f0;
-  --card: #ffffff;
-  --ink: #2c2c2a;
-  --muted: #6b6a65;
-  --hairline: #ece7df;
+  /* Surfaces and text, taken from the ERP boilerplate's token set
+     (erp-boilerplate-template, apps/web/src/index.css) and written here as hex
+     because this project's tokens are hex; the HSL each one came from is in the
+     comment beside it.
+
+     The difference from what was here before is the whole point: this used to be
+     a warm cream page with white cards, so the two were told apart by colour.
+     The boilerplate tells them apart with a border and a shadow instead and
+     keeps the surfaces neutral, which is what makes it read as an application
+     rather than a brochure.
+
+     One deliberate departure. The boilerplate's page and card are both pure
+     white, which works behind a desktop table; on a phone, where the screen is
+     a column of stacked cards, white on white leaves them floating with nothing
+     behind them. The page takes the boilerplate's own --muted step instead, so
+     the cards still lift off it. */
+  --page: #f5f7f9; /* 210 20% 97% — the boilerplate's --muted */
+  --card: #ffffff; /* 0 0% 100% */
+  --ink: #181c25; /* 222 22% 12% */
+  --muted: #6b7280; /* 220 9% 46% */
+  --hairline: #e5e7eb; /* 220 13% 91% */
+
+  /* The brand. Everything above is neutral so that this is the only colour in
+     the interface that means "act", which is the boilerplate's rule — it just
+     happens to be Krivi's orange rather than the boilerplate's blue. */
   --brand: #f7941d;
   /* The pressed/hover state of the brand button. It used to be #C96E0A, which
      is a handsome orange and reads 3.81:1 against the ink on top of it — so the
      label of the app's most-used button dropped below AA the moment a cursor
      touched it. This is as dark as the hover can go and still clear 4.5:1. */
   --brand-hover: #e07f0a;
-  --danger: #e8412c;
-  --pending: #fbb03b;
-  --success: #1d9e75;
+  /* A pale tint of the brand, for the surface a selected thing sits on. The
+     boilerplate derives its --accent from its primary; this does the same. */
+  --accent: #fdf0dd;
   /* Text and icons on the brand orange. White on #F7941D is 2.28:1, which fails
      WCAG AA (4.5:1) and is hard to read outdoors on a phone; the ink colour on
      the same orange is 6.2:1. The orange itself is unchanged from the brand. */
   --on-brand: #2c2c2a;
+
+  /* Status. Brand-neutral on purpose, and the reason is the boilerplate's:
+     green has to mean "good" whatever colour the company happens to be. */
+  --success: #1d9048; /* 142 66% 34% */
+  --danger: #d22222; /* 0 72% 48% */
+  --pending: #d77e09; /* 34 92% 44% */
+  --info: #1670df; /* 213 82% 48% */
+
   /* Ink colours for small text sitting on a 15-20% tint of the accent. The
      accents themselves are tuned for fills, and at text size on a pale tint
      they land near 3:1; these darkened tones clear 4.5:1. */
@@ -30,6 +58,10 @@
   --success-ink: #0f5f46;
   --danger-ink: #a32115;
   --pending-ink: #7a4e00;
+  /* The status blue is tuned as a fill. At 12px on its own 10% tint it measured
+     4.41:1, which is under AA by a whisker — the same trap the other four fell
+     into. Six percent darker, and 5.5:1. */
+  --info-ink: #1362c3;
   /* A red dark enough to carry white text. --danger is tuned to be seen as a
      fill and a border; white on it is 4.02:1, which is not a label. */
   --danger-strong: #c2291a;
@@ -46,16 +78,17 @@
   --viz-4: #e8412c; /* absent · overdue */
   /* One hue for magnitude, where the bars are all the same thing. */
   --viz-seq: #c96e0a;
-  --viz-grid: #ece7df;
+  --viz-grid: #e5e7eb;
 }
 
 .dark {
-  --page: #151412;
-  --card: #2c2b28;
-  --ink: #f1efe8;
-  --muted: #a8a49a;
-  --hairline: #3a3934;
+  --page: #0f131a; /* 222 24% 8% */
+  --card: #161a22; /* 222 22% 11% */
+  --ink: #f3f5f7; /* 210 20% 96% */
+  --muted: #939ba9; /* 218 11% 62% */
+  --hairline: #2b303b; /* 222 16% 20% */
   /* brand orange is unchanged in dark mode, per the brand spec */
+  --accent: #33260f;
   /* On dark tints the relationship inverts: the bright accents are the
      readable ones. Three of these were the accent colour itself, which turned
      out to be a step too dark: on a 15-20% tint of the same hue over the dark
@@ -67,14 +100,20 @@
   --success-ink: #4fd1a5;
   --danger-ink: #ffa99e;
   --pending-ink: #ffc978;
+  /* 4.48:1 on the dark card, so the same story the other way up. */
+  --info-ink: #74acf1;
   --danger-strong: #c2291a;
+  --success: #38b866; /* 142 60% 50% */
+  --danger: #e05252; /* 0 72% 62% */
+  --pending: #f5a623; /* 34 92% 58% */
+  --info: #4d9bef; /* 213 82% 62% */
 
   /* Dark mode is stepped for the dark card, not flipped: green and yellow hold,
      blue and red and the sequential hue move up to clear the dark band. */
   --viz-3: #3987e5;
   --viz-4: #e66767;
   --viz-seq: #d9791a;
-  --viz-grid: #3a3934;
+  --viz-grid: #2b303b;
 }
 
 @theme inline {
@@ -100,11 +139,24 @@
   --color-viz-4: var(--viz-4);
   --color-viz-seq: var(--viz-seq);
   --color-viz-grid: var(--viz-grid);
+  --color-accent: var(--accent);
+  --color-info: var(--info);
+  --color-info-ink: var(--info-ink);
 
+  /* Not the boilerplate's Inter: this interface is read in Gujarati and Hindi as
+     well as English, and Mukta carries all three in one family. Inter has no
+     Devanagari or Gujarati at all, so adopting it would have meant a second
+     font and two different-looking versions of the same screen. */
   --font-sans: var(--font-mukta), var(--font-mukta-vaani), ui-sans-serif,
     system-ui, sans-serif;
 
-  --radius-card: 0.875rem;
+  /* The boilerplate's 0.5rem scale. What was here, 0.875rem, is a consumer-app
+     roundness; half a rem reads as a tool. */
+  --radius-card: 0.5rem;
+
+  /* Borders separate the surfaces now that they are both close to neutral, and
+     this is what stops that looking flat. Straight from the boilerplate. */
+  --shadow-card: 0 1px 2px 0 rgb(16 24 40 / 0.04), 0 1px 3px 0 rgb(16 24 40 / 0.06);
 }
 
 @layer base {
@@ -195,6 +247,31 @@
 
 .lc-fade {
   animation: lc-fade var(--motion-fast) var(--ease-out) both;
+}
+
+/**
+ * The label above a group of cards or fields.
+ *
+ * The boilerplate's: smaller than body text, letter-spaced, semibold rather
+ * than bold. Repeating "text-sm font-bold uppercase" in a dozen files was how
+ * it was done before, and it made these headings shout over the content they
+ * were only meant to introduce.
+ */
+.lc-section-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/**
+ * Figures that sit above or beside each other — the stat cards, the report
+ * tables, a column of hours. Tabular numerals give every digit the same width,
+ * so the columns line up instead of drifting. Straight from the boilerplate.
+ */
+.lc-numeric {
+  font-variant-numeric: tabular-nums;
 }
 
 /* The bar that says the tap was heard. It travels rather than fills, because

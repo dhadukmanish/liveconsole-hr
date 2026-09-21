@@ -92,7 +92,7 @@ export default async function UsersPage({
                     </CardMuted>
                   </div>
                   <div className="flex shrink-0 flex-col items-end gap-1">
-                    <Badge tone="brand">{t(`roles.${row.role.code}` as "roles.ADMIN")}</Badge>
+                    <Badge tone="info">{t(`roles.${row.role.code}` as "roles.ADMIN")}</Badge>
                     <Badge tone={STATUS_TONE[row.status]}>
                       {t(`common.${row.status.toLowerCase()}` as "common.active")}
                     </Badge>

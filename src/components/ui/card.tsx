@@ -8,7 +8,10 @@ export function Card({
   return (
     <div
       className={cn(
-        "rounded-card border border-hairline bg-card p-4 shadow-[0_1px_2px_rgba(44,44,42,0.04)]",
+        // A card is told apart from the page by its border and its shadow, not
+        // by being a different colour — which is how the boilerplate does it,
+        // and why the surfaces can stay neutral.
+        "rounded-card border border-hairline bg-card p-4 shadow-card",
         className,
       )}
       {...props}

@@ -55,7 +55,7 @@ export default async function HomePage() {
       </Suspense>
 
       <section className="mb-4">
-        <h2 className="mb-2 text-sm font-bold text-muted uppercase">{t("home.stats")}</h2>
+        <h2 className="mb-2 lc-section-label">{t("home.stats")}</h2>
         <Suspense fallback={<StatsSkeleton />}>
           <Stats user={user} />
         </Suspense>
@@ -67,7 +67,7 @@ export default async function HomePage() {
 
       <section>
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-sm font-bold text-muted uppercase">{t("home.myTasks")}</h2>
+          <h2 className="lc-section-label">{t("home.myTasks")}</h2>
           <Link
             href="/tasks"
             className="-my-1 flex min-h-11 items-center rounded-lg px-2 text-sm font-semibold text-brand-ink underline underline-offset-4 transition-transform duration-150 active:scale-95"
@@ -156,23 +156,23 @@ async function Stats({ user }: { user: CurrentUser }) {
     <div className="grid grid-cols-2 gap-3">
       {counts ? (
         <Card>
-          <p className="text-2xl font-bold text-ink">{counts.total}</p>
+          <p className="lc-numeric text-2xl font-bold text-ink">{counts.total}</p>
           <CardMuted>{t("home.statUsers")}</CardMuted>
         </Card>
       ) : null}
       <Card>
-        <p className="text-2xl font-bold text-ink">{myDocuments}</p>
+        <p className="lc-numeric text-2xl font-bold text-ink">{myDocuments}</p>
         <CardMuted>{t("home.statDocuments")}</CardMuted>
       </Card>
       {user.roleCode !== "EMPLOYEE" ? (
         <Card>
-          <p className="text-2xl font-bold text-ink">{teamCount}</p>
+          <p className="lc-numeric text-2xl font-bold text-ink">{teamCount}</p>
           <CardMuted>{t("home.statTeam")}</CardMuted>
         </Card>
       ) : null}
       <Link href="/leave" className="block">
         <Card className="h-full transition-[border-color,transform] duration-150 hover:border-brand active:scale-[0.99]">
-          <p className={`text-2xl font-bold ${pending > 0 ? "text-brand-ink" : "text-ink"}`}>
+          <p className={`lc-numeric text-2xl font-bold ${pending > 0 ? "text-brand-ink" : "text-ink"}`}>
             {pending}
           </p>
           <CardMuted>{t("home.statPending")}</CardMuted>

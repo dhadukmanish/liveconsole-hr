@@ -70,7 +70,7 @@ export default async function UserDetailPage({
         subtitle={target.mobile}
         action={
           <div className="flex flex-col items-end gap-1">
-            <Badge tone="brand">{t(`roles.${target.role.code}` as "roles.ADMIN")}</Badge>
+            <Badge tone="info">{t(`roles.${target.role.code}` as "roles.ADMIN")}</Badge>
             <Badge tone={STATUS_TONE[target.status]}>
               {t(`common.${target.status.toLowerCase()}` as "common.active")}
             </Badge>

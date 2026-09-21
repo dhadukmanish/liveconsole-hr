@@ -188,7 +188,7 @@ async function AttendanceTable({ user, month }: { user: Actor; month: string }) 
       </CardMuted>
 
       <div className="lc-scroll-hint -mx-4 overflow-x-auto px-4">
-        <table className="min-w-full border-collapse text-sm">
+        <table className="lc-numeric min-w-full border-collapse text-sm">
           <thead>
             <tr className="border-b border-hairline text-left">
               <th className="sticky left-0 border-r border-hairline bg-page py-2 pr-3 font-bold text-ink">

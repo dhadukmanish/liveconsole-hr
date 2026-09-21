@@ -71,7 +71,7 @@ export default async function LeavePage() {
 
       {pendingForMe.length > 0 ? (
         <section className="mb-4">
-          <h2 className="mb-2 text-sm font-bold text-muted uppercase">
+          <h2 className="mb-2 lc-section-label">
             {t("leave.awaitingYou", { count: pendingForMe.length })}
           </h2>
           <ul className="flex flex-col gap-2">
@@ -113,7 +113,7 @@ export default async function LeavePage() {
       ) : null}
 
       <section className="mb-4">
-        <h2 className="mb-2 text-sm font-bold text-muted uppercase">{t("leave.balance")}</h2>
+        <h2 className="mb-2 lc-section-label">{t("leave.balance")}</h2>
         <div className="grid grid-cols-2 gap-3">
           {types.map((type) => {
             const used = usedByType.get(type.id) ?? 0;
@@ -121,7 +121,7 @@ export default async function LeavePage() {
             return (
               <Card key={type.id}>
                 <p className="text-sm font-semibold text-ink">{type.name}</p>
-                <p className="mt-1 text-2xl font-bold text-ink">
+                <p className="lc-numeric mt-1 text-2xl font-bold text-ink">
                   {left === null ? "—" : left}
                 </p>
                 <CardMuted>
@@ -136,7 +136,7 @@ export default async function LeavePage() {
       </section>
 
       <section>
-        <h2 className="mb-2 text-sm font-bold text-muted uppercase">{t("leave.myRequests")}</h2>
+        <h2 className="mb-2 lc-section-label">{t("leave.myRequests")}</h2>
         {mine.length === 0 ? (
           <EmptyState>{t("leave.noRequests")}</EmptyState>
         ) : (

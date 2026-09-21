@@ -75,7 +75,7 @@ export default async function AttendancePage() {
       {showsTeam ? (
         <section className="mb-4">
           <div className="mb-2 flex items-center justify-between">
-            <h2 className="text-sm font-bold text-muted uppercase">
+            <h2 className="lc-section-label">
               {t("attendance.teamToday")}
             </h2>
             <Badge tone="success">
@@ -115,7 +115,7 @@ export default async function AttendancePage() {
       ) : null}
 
       <section>
-        <h2 className="mb-2 text-sm font-bold text-muted uppercase">
+        <h2 className="mb-2 lc-section-label">
           {t("attendance.thisMonth")}
         </h2>
         {month.length === 0 ? (
