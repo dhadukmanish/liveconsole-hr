@@ -653,6 +653,33 @@ jobs:
             node scripts/ftp-deploy.mjs --remove-default-index --resume
           fi
 
+      - name: Restart the app so the new code is the code that runs
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_REMOTE: ${{ vars.FTP_REMOTE || '/' }}
+        # Uploading files does not restart anything. IIS keeps the node process
+        # it already has, so until something recycles the pool the host serves
+        # the new static assets off disk while still running the old server —
+        # which is how a deploy could report success, put the right stylesheet
+        # on the site, and leave every behaviour change out of reach.
+        #
+        # Rewriting web.config is what recycles an IIS application, and it has
+        # to happen after the payload rather than as part of it: it is uploaded
+        # with everything else, near the start, when the files it is meant to
+        # bring into service are not there yet.
+        run: |
+          node scripts/ftp-deploy.mjs --put web.config --as web.config
+          echo "web.config rewritten; waiting for the app to come back"
+          for i in $(seq 1 12); do
+            sleep 10
+            code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 \
+              "http://${{ vars.SITE_HOST || 'task.kriviinfotech.com' }}/login")
+            echo "  attempt $i: /login -> $code"
+            [ "$code" = "200" ] && break
+          done
+
       - name: Check the site answers
         env:
           SITE_URL: ${{ vars.SITE_URL || 'https://task.kriviinfotech.com' }}
