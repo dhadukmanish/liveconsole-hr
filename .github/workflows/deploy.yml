@@ -97,8 +97,14 @@ jobs:
   inspect:
     # Thirty seconds instead of a fifteen-minute deploy, for answering "where did
     # the files land and what does the site actually return?"
-    needs: gate
-    if: needs.gate.outputs.inspect == 'true'
+    #
+    # It waits for deploy, and only because it once did not: on a commit asking
+    # for both, inspect ran while the upload was still going and reported on the
+    # build that was there before — which is the one question it exists to
+    # answer. always() is what keeps it running on an inspect-only commit, where
+    # deploy is skipped rather than finished.
+    needs: [gate, deploy]
+    if: always() && needs.gate.outputs.inspect == 'true'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
