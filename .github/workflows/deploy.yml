@@ -225,8 +225,9 @@ jobs:
           # This is the check that actually answers "did it go live?" — the
           # stylesheet comparison below only notices when the CSS changed.
           want_sha=$(git rev-parse HEAD | cut -c1-7)
-          live_sha=$(curl -s --max-time 45 "$base/api/build" \
-            | sed -n 's/.*"sha":"\([^"]*\)".*/\1/p')
+          build_code=$(curl -s -o /tmp/build.json -w '%{http_code}' --max-time 45 "$base/api/build")
+          echo "  /api/build -> HTTP $build_code: $(head -c 200 /tmp/build.json)"
+          live_sha=$(sed -n 's/.*"sha":"\([^"]*\)".*/\1/p' /tmp/build.json)
           if [ -z "$live_sha" ]; then
             echo "  note  the host has no /api/build yet — it arrives with the next deploy"
           elif [ "$live_sha" = "$want_sha" ]; then
