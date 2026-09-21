@@ -369,6 +369,35 @@ jobs:
           echo
           echo "The gap between the static file and /api/build is the Node app."
           echo "The gap between /api/build and /login is the database round trip."
+
+          # Latency is the floor; bytes are what a phone actually waits for. Two
+          # things decide how many go over the wire, and neither is visible from
+          # the code, because IIS can strip or override what the app sets:
+          #
+          #   Content-Encoding  is anything compressed at all
+          #   Cache-Control     does a return visit re-download the same files
+          #
+          # A /_next/static file is content-addressed — its name changes when it
+          # changes — so it should be cached for a year. If it is not, every
+          # screen pays for the app's JavaScript again.
+          echo
+          echo "=== what the phone has to download ==="
+          for path in "$css" "/login"; do
+            [ -z "$path" ] && continue
+            echo "--- $path"
+            curl -sS -D - -o /dev/null --max-time 30 \
+              -H 'Accept-Encoding: gzip, br' "http://$HOST_NAME$path" 2>&1 \
+              | grep -iE '^(content-encoding|content-length|cache-control|content-type|vary):' \
+              | sed 's/^/    /'
+            plain=$(curl -sS -o /dev/null -w '%{size_download}' --max-time 30 \
+              -H 'Accept-Encoding: identity' "http://$HOST_NAME$path")
+            zipped=$(curl -sS -o /dev/null -w '%{size_download}' --max-time 30 \
+              -H 'Accept-Encoding: gzip' --compressed "http://$HOST_NAME$path")
+            echo "    uncompressed $plain bytes"
+            if [ "$zipped" = "$plain" ]; then
+              echo "    NOT COMPRESSED — the phone downloads every one of those bytes"
+            fi
+          done
           exit 0
 
   handler:
