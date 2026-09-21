@@ -673,6 +673,21 @@ jobs:
             node scripts/ftp-deploy.mjs --remove-default-index --resume
           fi
 
+      - name: Check every file arrived, and re-send the ones that did not
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_REMOTE: ${{ vars.FTP_REMOTE || '/' }}
+        # A deploy that reported success had left a whole directory out. This
+        # host drops the connection part way through two thousand files and the
+        # uploader reconnects and carries on, so a gap is quiet by nature — the
+        # app goes on working, because what is missing is whatever nothing has
+        # called yet. Compare the payload against the host and send the
+        # difference, rather than trusting that a pass with no error was a pass
+        # with no gaps.
+        run: node scripts/ftp-deploy.mjs --verify --fix
+
       - name: Restart the app so the new code is the code that runs
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}

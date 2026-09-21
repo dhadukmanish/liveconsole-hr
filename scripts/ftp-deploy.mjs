@@ -18,6 +18,9 @@
  *   --list            print the remote folder listing and stop
  *   --list --path <p> list that folder on the host instead of the site root,
  *                     for answering "did this file actually get uploaded?"
+ *   --verify          walk the payload and report every file that is missing
+ *                     from the host or there at the wrong size
+ *   --verify --fix    ...and upload those files
  *   --resume          skip files whose size already matches the host, for
  *                     retrying an upload the host interrupted part way
  *   --logs            print the app's stdout logs from the host and stop
@@ -66,6 +69,8 @@ const DRY = flag("dry-run");
 const ZIP_ONLY = flag("zip-only");
 const LIST_ONLY = flag("list");
 const LIST_PATH = option("path", null);
+const VERIFY = flag("verify");
+const FIX = flag("fix");
 const LOGS_ONLY = flag("logs");
 const PUT_FILE = option("put", null);
 const PUT_AS = option("as", null);
@@ -275,6 +280,71 @@ export async function uploadTree(client, localRoot, remoteRoot, options = {}) {
   return { uploaded: uploaded.count, skipped, failed, reconnects: reconnects.count };
 }
 
+/**
+ * Compares the payload against the host, file by file.
+ *
+ * This host drops the connection part way through a two-thousand-file upload,
+ * and the uploader reconnects and carries on — but a deploy that reported
+ * success had still left one directory out, and nothing noticed for days. The
+ * app kept working, because what was missing was a route nothing called yet.
+ *
+ * Size rather than checksum: FTP has no hash, and a build artefact that changed
+ * without changing size is not a thing that happens here.
+ */
+async function verifyTree(client, localRoot, remoteRoot, { fix = false } = {}) {
+  const { readdir, stat } = await import("node:fs/promises");
+  const missing = [];
+  const wrongSize = [];
+  let checked = 0;
+
+  const remoteIndex = new Map();
+  async function indexRemote(dir) {
+    let entries;
+    try {
+      entries = await client.list(dir);
+    } catch {
+      return; // A directory that is not there at all shows up as missing files.
+    }
+    for (const entry of entries) {
+      const full = path.posix.join(dir, entry.name);
+      if (entry.isDirectory) await indexRemote(full);
+      else remoteIndex.set(full, entry.size);
+    }
+  }
+  await indexRemote(remoteRoot);
+
+  async function walk(localDir, remoteDir) {
+    for (const entry of await readdir(localDir, { withFileTypes: true })) {
+      const localPath = path.join(localDir, entry.name);
+      const remotePath = path.posix.join(remoteDir, entry.name);
+      if (entry.isDirectory()) {
+        await walk(localPath, remotePath);
+        continue;
+      }
+      checked += 1;
+      const localSize = (await stat(localPath)).size;
+      const hostSize = remoteIndex.get(remotePath);
+      if (hostSize === undefined) missing.push({ localPath, remotePath, localSize });
+      else if (hostSize !== localSize) {
+        wrongSize.push({ localPath, remotePath, localSize, hostSize });
+      }
+    }
+  }
+  await walk(localRoot, remoteRoot);
+
+  const broken = [...missing, ...wrongSize];
+  if (fix && broken.length > 0) {
+    console.log(`Re-sending ${broken.length} file(s)...`);
+    for (const item of broken) {
+      await client.ensureDir(path.posix.dirname(item.remotePath));
+      await client.uploadFrom(item.localPath, item.remotePath);
+      console.log(`  sent ${item.remotePath}`);
+    }
+  }
+
+  return { checked, missing, wrongSize };
+}
+
 async function main() {
   assertUsable();
 
@@ -293,6 +363,29 @@ async function main() {
     await connect(client);
     await printRemoteLogs(client);
     client.close();
+    return;
+  }
+
+  if (VERIFY) {
+    const client = new Client(120_000);
+    await connect(client);
+    const result = await verifyTree(client, LOCAL, REMOTE, { fix: FIX });
+    client.close();
+
+    console.log(`\nChecked ${result.checked} files against ${HOST}.`);
+    for (const item of result.missing) console.log(`  MISSING     ${item.remotePath}`);
+    for (const item of result.wrongSize) {
+      console.log(`  WRONG SIZE  ${item.remotePath} (host ${item.hostSize}, payload ${item.localSize})`);
+    }
+    const broken = result.missing.length + result.wrongSize.length;
+    if (broken === 0) {
+      console.log("Every file in the payload is on the host at the right size.");
+    } else if (FIX) {
+      console.log(`${broken} file(s) were wrong and have been re-sent.`);
+    } else {
+      console.log(`${broken} file(s) are wrong. Re-run with --fix to send them.`);
+      process.exitCode = 1;
+    }
     return;
   }
 
