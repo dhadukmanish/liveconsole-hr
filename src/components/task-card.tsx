@@ -21,12 +21,13 @@ export async function TaskCard({ task }: { task: TaskCardData }) {
 
   return (
     // prefetch={false}: one row in a list, and a list here runs to fifty rows.
-    // Once a route has a loading boundary Next prefetches every link on screen,
-    // and over http a browser holds six connections to one host — so fifty
-    // prefetches do not warm the app, they queue in front of the tap the person
-    // actually made. Measured on the board: the navigation the tap started came
-    // back as net::ERR_ABORTED and the screen never changed at all. Prefetching
-    // is worth it on the handful of links everyone uses, not on rows.
+    // Nothing prefetches these today — Next only prefetches a dynamic route as
+    // far as a loading boundary, and this app has none, for reasons set out in
+    // NavProgress. This is here so that the day one is added back, fifty rows
+    // do not each fire a request: over http a browser holds six connections to
+    // one host, and fifty prefetches do not warm the app, they queue in front
+    // of the tap the person actually made. That was measured, not guessed —
+    // every row logged net::ERR_ABORTED while a boundary was in place.
     <Link href={`/tasks/${task.id}`} prefetch={false} className="block">
       <article className="rounded-xl border border-hairline bg-card p-3 transition-[border-color,transform] duration-150 hover:border-brand active:scale-[0.99]">
         <div className="flex items-start gap-2">

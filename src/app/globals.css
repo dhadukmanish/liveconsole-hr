@@ -197,6 +197,22 @@
   animation: lc-fade var(--motion-fast) var(--ease-out) both;
 }
 
+/* The bar that says the tap was heard. It travels rather than fills, because
+   there is nothing to measure: the server answers when it answers, and a
+   progress bar that claims to know how far along it is would be lying. */
+@keyframes lc-progress {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(400%);
+  }
+}
+
+.lc-progress {
+  animation: lc-progress 1.1s var(--ease-out) infinite;
+}
+
 /* What a <details> panel does when it opens. Height cannot be animated from
    auto, and interpolate-size is not everywhere yet, so this fades and lifts
    instead — which is the part the eye actually follows. */

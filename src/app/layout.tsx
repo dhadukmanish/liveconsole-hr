@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+import { NavProgress } from "@/components/nav-progress";
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import { Mukta, Mukta_Vaani } from "next/font/google";
@@ -78,6 +80,11 @@ export default async function RootLayout({
       </head>
       <body className="min-h-dvh bg-page text-ink antialiased">
         <NextIntlClientProvider locale={locale} messages={messages}>
+          {/* Rendered once, above everything: it answers the tap while the
+              server is still deciding what the next screen is. */}
+          <Suspense fallback={null}>
+            <NavProgress />
+          </Suspense>
           {children}
         </NextIntlClientProvider>
       </body>
