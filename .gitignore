@@ -2,9 +2,14 @@
 .env.*
 !.env.example
 node_modules/
-.next/
-out/
-build/
+# Anchored to the repository root, all of them. An unanchored `build/` matches a
+# directory called build at any depth, and src/app/api/build — a route — was
+# silently never committed because of it. The deploy then shipped a payload
+# built from a checkout that did not contain the file, the host 404'd the route,
+# and the missing file looked for hours like a host that would not restart.
+/.next/
+/out/
+/build/
 *.log
 logs/
 .DS_Store

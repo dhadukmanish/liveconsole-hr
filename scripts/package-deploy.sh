@@ -19,6 +19,22 @@ ZIP="$ROOT/deploy-payload.zip"
 
 cd "$ROOT"
 
+# A source file that git ignores is a file the deploy will never see: the
+# runner builds from a fresh checkout, so the payload silently comes out
+# without it and the host answers 404 for something that works perfectly on
+# the machine it was written on. That is not hypothetical — an unanchored
+# `build/` in .gitignore swallowed src/app/api/build/route.ts, and the missing
+# route was read as a host that would not restart for most of a day.
+echo "==> Checking no source file is ignored"
+IGNORED=$(git ls-files --others --ignored --exclude-standard -- \
+  src messages prisma scripts .github 2>/dev/null || true)
+if [ -n "$IGNORED" ]; then
+  echo "These files exist here but are gitignored, so a fresh checkout will not have them:" >&2
+  echo "$IGNORED" | sed 's/^/    /' >&2
+  echo "Either commit them or stop ignoring them; the deploy builds from the checkout." >&2
+  exit 1
+fi
+
 echo "==> Building"
 npx prisma generate >/dev/null
 npm run build >/dev/null
