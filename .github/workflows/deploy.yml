@@ -215,6 +215,21 @@ jobs:
 
           echo
           echo "=== is the build on the host this commit? ==="
+          # The stamp the payload carries, against the commit being inspected.
+          # This is the check that actually answers "did it go live?" — the
+          # stylesheet comparison below only notices when the CSS changed.
+          want_sha=$(git rev-parse HEAD | cut -c1-7)
+          live_sha=$(curl -s --max-time 45 "$base/api/build" \
+            | sed -n 's/.*"sha":"\([^"]*\)".*/\1/p')
+          if [ -z "$live_sha" ]; then
+            echo "  note  the host has no /api/build yet — it arrives with the next deploy"
+          elif [ "$live_sha" = "$want_sha" ]; then
+            echo "  ok    the host is running this commit ($live_sha)"
+          else
+            echo "  FAIL  the host is running $live_sha, this commit is $want_sha"
+            failures=$((failures + 1))
+          fi
+
           # "It deployed" and "the phone is looking at it" are different claims,
           # and until now only the first was ever checked. The dark theme's
           # brand ink is a value that changes whenever the stylesheet does, so
