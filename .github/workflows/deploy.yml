@@ -122,6 +122,25 @@ jobs:
           FTP_REMOTE: ${{ vars.FTP_REMOTE || '/' }}
         run: node scripts/ftp-deploy.mjs --list
 
+      - name: Is the new code actually on the host?
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_REMOTE: ${{ vars.FTP_REMOTE || '/' }}
+        # Before blaming the app pool for serving old code, check the code is
+        # there to serve. /api/build is a route this deploy adds, so its folder
+        # existing on the host separates "uploaded but not picked up" from
+        # "never uploaded" — two problems with completely different fixes.
+        run: |
+          set +e
+          echo "=== web.config on the host (its last line names the deploy) ==="
+          node scripts/ftp-deploy.mjs --list --path . 2>&1 | grep -i "web.config"
+          echo
+          echo "=== .next/server/app/api on the host ==="
+          node scripts/ftp-deploy.mjs --list --path .next/server/app/api
+          exit 0
+
       - name: App logs from the host
         env:
           FTP_HOST: ${{ secrets.FTP_HOST }}

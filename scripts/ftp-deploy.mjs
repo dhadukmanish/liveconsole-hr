@@ -16,6 +16,8 @@
  *   --secure          use FTPS (explicit TLS)
  *   --port <n>        control port             (default: 21)
  *   --list            print the remote folder listing and stop
+ *   --list --path <p> list that folder on the host instead of the site root,
+ *                     for answering "did this file actually get uploaded?"
  *   --resume          skip files whose size already matches the host, for
  *                     retrying an upload the host interrupted part way
  *   --logs            print the app's stdout logs from the host and stop
@@ -63,6 +65,7 @@ const LOCAL = path.resolve(option("dir", "deploy-payload"));
 const DRY = flag("dry-run");
 const ZIP_ONLY = flag("zip-only");
 const LIST_ONLY = flag("list");
+const LIST_PATH = option("path", null);
 const LOGS_ONLY = flag("logs");
 const PUT_FILE = option("put", null);
 const PUT_AS = option("as", null);
@@ -298,8 +301,11 @@ async function main() {
     // account does not land in the site root, FTP_REMOTE has to say so.
     const client = new Client(60_000);
     await connect(client);
-    const entries = await client.list(REMOTE);
-    console.log(`Remote listing of ${REMOTE} on ${HOST}:\n`);
+    const where = LIST_PATH
+      ? path.posix.join(REMOTE, LIST_PATH.replace(/^\/+/, ""))
+      : REMOTE;
+    const entries = await client.list(where);
+    console.log(`Remote listing of ${where} on ${HOST}:\n`);
     for (const entry of entries) {
       const kind = entry.isDirectory ? "dir " : "file";
       console.log(`  ${kind}  ${String(entry.size).padStart(10)}  ${entry.name}`);
