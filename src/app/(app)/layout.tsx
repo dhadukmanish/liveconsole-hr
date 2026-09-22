@@ -67,6 +67,7 @@ export default async function AppLayout({
       sidebarExtras={sidebarExtras}
       userName={user.name}
       roleName={t(`roles.${user.roleCode}` as "roles.ADMIN")}
+      canChangePassword={user.loginMethod === "PASSWORD"}
     >
       {children}
     </AppShell>

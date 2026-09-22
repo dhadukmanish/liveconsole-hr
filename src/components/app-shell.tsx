@@ -18,6 +18,7 @@ import {
   Users,
 } from "lucide-react";
 import { NavPending } from "@/components/nav-pending";
+import { UserMenu } from "@/components/user-menu";
 import { cn } from "@/lib/utils";
 
 export type NavItem = {
@@ -56,16 +57,24 @@ export function AppShell({
   sidebarExtras,
   userName,
   roleName,
+  canChangePassword,
   children,
 }: {
   tabs: NavItem[];
   sidebarExtras: NavItem[];
   userName: string;
   roleName: string;
+  canChangePassword: boolean;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
   const t = useTranslations();
+  const initials = userName
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase() ?? "")
+    .join("");
 
   return (
     <div className="min-h-dvh md:flex">
@@ -110,6 +119,26 @@ export function AppShell({
       </aside>
 
       <div className="flex min-w-0 flex-1 flex-col">
+        {/* Identity and the way out, on every screen, the way the boilerplate
+            does it. Signing out was at the bottom of one screen before, past
+            everything else on it, which is a place nobody finds. */}
+        <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b border-hairline bg-card px-3">
+          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-brand text-xs font-bold text-on-brand">
+            LC
+          </span>
+          <span className="truncate text-sm font-bold text-ink md:hidden">
+            {t("common.appName")}
+          </span>
+          <div className="ml-auto">
+            <UserMenu
+              name={userName}
+              roleName={roleName}
+              initials={initials}
+              canChangePassword={canChangePassword}
+            />
+          </div>
+        </header>
+
         {/* pb-24 keeps content clear of the fixed tab bar on phones. */}
         <main className="mx-auto w-full max-w-3xl flex-1 px-4 pt-4 pb-24 md:pb-8">
           {/* Keyed on the path so a soft navigation remounts this and the
