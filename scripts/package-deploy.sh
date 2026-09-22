@@ -114,7 +114,16 @@ done
 AFTER=$(du -sm "$OUT" | cut -f1)
 echo "    ${BEFORE} MB -> ${AFTER} MB"
 
-# 9. Zip for the host's File Manager upload (much faster than FTP per-file).
+# 9. A stamp saying which dependency tree this payload's node_modules came from.
+#    The uploader reads the host's copy before it starts: if it matches, every
+#    file under node_modules that is already there at the right size can be
+#    left alone, and a deploy sends two hundred files instead of two thousand.
+#    If it differs — or is missing — node_modules goes up in full.
+DEPS_HASH=$(sha256sum package-lock.json | cut -c1-16)
+printf '{"deps":"%s"}\n' "$DEPS_HASH" > "$OUT/.deploy-manifest.json"
+echo "==> Dependency stamp ${DEPS_HASH}"
+
+# 10. Zip for the host's File Manager upload (much faster than FTP per-file).
 if command -v zip >/dev/null 2>&1; then
   (cd "$OUT" && zip -qr "$ZIP" .)
   echo "==> Wrote $(basename "$ZIP") ($(du -sh "$ZIP" | cut -f1))"

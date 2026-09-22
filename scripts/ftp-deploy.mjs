@@ -65,6 +65,8 @@ const PASSWORD = process.env.FTP_PASSWORD;
 const REMOTE = option("remote", process.env.FTP_REMOTE ?? "/");
 const PORT = Number(option("port", process.env.FTP_PORT ?? 21));
 const LOCAL = path.resolve(option("dir", "deploy-payload"));
+/** Written by the packager; says which dependency tree node_modules came from. */
+const MANIFEST = ".deploy-manifest.json";
 const DRY = flag("dry-run");
 const ZIP_ONLY = flag("zip-only");
 const LIST_ONLY = flag("list");
@@ -182,9 +184,37 @@ const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
  * locked file that genuinely differs fails the deploy rather than leaving the
  * site half updated.
  */
+/**
+ * Which files may be left alone when the host already has them at the same size.
+ *
+ * Two kinds, and no others:
+ *
+ *   .next/static/**   the filename contains a hash of the contents, so a name
+ *                     that is already there IS the same file. Not a guess.
+ *   node_modules/**   vendored dependencies, and only when the host's copy of
+ *                     the dependency stamp matches this payload's — so this is
+ *                     "the dependency tree did not change", not "the sizes look
+ *                     similar".
+ *
+ * Everything else — our own server code, web.config, the messages, Prisma —
+ * goes up every time. That is around two hundred files out of two thousand two
+ * hundred, and it is the part where "same size, different content" is a thing
+ * that can actually happen.
+ */
+function reusableOnHost(relativePath, { dependenciesUnchanged }) {
+  if (relativePath.startsWith(".next/static/")) return true;
+  if (relativePath.startsWith("node_modules/")) return dependenciesUnchanged;
+  return false;
+}
+
 export async function uploadTree(client, localRoot, remoteRoot, options = {}) {
   const { readdir, stat } = await import("node:fs/promises");
-  const { reconnect, resume = false } = options;
+  const {
+    reconnect,
+    resume = false,
+    remoteIndex = null,
+    dependenciesUnchanged = false,
+  } = options;
   const uploaded = { count: 0 };
   const skipped = [];
   const failed = [];
@@ -226,6 +256,20 @@ export async function uploadTree(client, localRoot, remoteRoot, options = {}) {
 
       const localSize = (await stat(localPath)).size;
       let lastError;
+
+      // Already on the host, and of a kind where that settles it. The verify
+      // step still checks every one of these afterwards, so a wrong call here
+      // is caught rather than shipped.
+      if (remoteIndex) {
+        const relative = path.posix.relative(remoteRoot, remotePath);
+        if (
+          reusableOnHost(relative, { dependenciesUnchanged }) &&
+          remoteIndex.get(remotePath) === localSize
+        ) {
+          skipped.push(relative || entry.name);
+          continue;
+        }
+      }
 
       // Resuming an interrupted upload: same size means it already went up.
       // Off by default — for an app file, same size and different content is
@@ -291,27 +335,77 @@ export async function uploadTree(client, localRoot, remoteRoot, options = {}) {
  * Size rather than checksum: FTP has no hash, and a build artefact that changed
  * without changing size is not a thing that happens here.
  */
+/**
+ * Does the host's node_modules come from the same dependency tree as this
+ * payload's?
+ *
+ * The packager writes .deploy-manifest.json next to the app with a hash of
+ * package-lock.json. If the copy on the host says the same thing, then the two
+ * thousand files under node_modules are the same two thousand files, and the
+ * ones already there at the right size do not need sending again. If it says
+ * anything else — or is not there, as it will not be the first time — they all
+ * go up.
+ *
+ * Deliberately pessimistic everywhere: any failure to read it answers no.
+ */
+async function hostDependencyStampMatches(client) {
+  const { readFile, mkdtemp, rm } = await import("node:fs/promises");
+  const os = await import("node:os");
+
+  let ours;
+  try {
+    ours = JSON.parse(await readFile(path.join(LOCAL, MANIFEST), "utf8"))?.deps;
+  } catch {
+    return false;
+  }
+  if (!ours) return false;
+
+  const scratch = await mkdtemp(path.join(os.tmpdir(), "lc-manifest-"));
+  const local = path.join(scratch, MANIFEST);
+  try {
+    await client.downloadTo(local, path.posix.join(REMOTE, MANIFEST));
+    const theirs = JSON.parse(await readFile(local, "utf8"))?.deps;
+    return Boolean(theirs) && theirs === ours;
+  } catch {
+    return false;
+  } finally {
+    await rm(scratch, { recursive: true, force: true }).catch(() => {});
+  }
+}
+
+/**
+ * Every file on the host, with its size, as one map.
+ *
+ * The cost of this is one round trip per DIRECTORY — `list` returns names and
+ * sizes together — where asking about files one at a time is one per file. On
+ * this payload that is the difference between about a minute and about ten.
+ */
+async function indexRemoteTree(client, root) {
+  const index = new Map();
+  async function walk(dir) {
+    let entries;
+    try {
+      entries = await client.list(dir);
+    } catch {
+      return; // Not there at all; every file under it counts as missing.
+    }
+    for (const entry of entries) {
+      const full = path.posix.join(dir, entry.name);
+      if (entry.isDirectory) await walk(full);
+      else index.set(full, entry.size);
+    }
+  }
+  await walk(root);
+  return index;
+}
+
 async function verifyTree(client, localRoot, remoteRoot, { fix = false } = {}) {
   const { readdir, stat } = await import("node:fs/promises");
   const missing = [];
   const wrongSize = [];
   let checked = 0;
 
-  const remoteIndex = new Map();
-  async function indexRemote(dir) {
-    let entries;
-    try {
-      entries = await client.list(dir);
-    } catch {
-      return; // A directory that is not there at all shows up as missing files.
-    }
-    for (const entry of entries) {
-      const full = path.posix.join(dir, entry.name);
-      if (entry.isDirectory) await indexRemote(full);
-      else remoteIndex.set(full, entry.size);
-    }
-  }
-  await indexRemote(remoteRoot);
+  const remoteIndex = await indexRemoteTree(client, remoteRoot);
 
   async function walk(localDir, remoteDir) {
     for (const entry of await readdir(localDir, { withFileTypes: true })) {
@@ -493,12 +587,35 @@ async function main() {
       }
     }
 
+    // What is already up there, and whether the dependency tree behind it is
+    // the one this payload was built from. Listing costs a round trip per
+    // directory; asking about files one at a time costs one per file, which on
+    // this payload is the whole ten minutes.
+    client.trackProgress();
+    process.stdout.write("  reading what the host already has... ");
+    const remoteIndex = await indexRemoteTree(client, REMOTE);
+    const dependenciesUnchanged = await hostDependencyStampMatches(client);
+    console.log(
+      `${remoteIndex.size} file(s) there; dependencies ` +
+        (dependenciesUnchanged ? "unchanged" : "changed or unknown"),
+    );
+
+    client.trackProgress((info) => {
+      if (info.name) seen.add(info.name);
+      const label = info.name ? path.posix.relative(REMOTE, info.name) : "";
+      process.stdout.write(
+        `\r  ${String(Math.min(seen.size, files)).padStart(4)}/${files}  ${mb(info.bytesOverall).padStart(8)}  ${label.padEnd(48)}`,
+      );
+    });
+
     // Uploaded file by file rather than with uploadFromDir, because a redeploy
     // onto a running Windows app hits locked files, and one locked file must
     // not abandon the other two thousand.
     const result = await uploadTree(client, LOCAL, REMOTE, {
       reconnect: () => connect(client),
       resume: flag("resume"),
+      remoteIndex,
+      dependenciesUnchanged,
     });
     client.trackProgress();
 
@@ -511,10 +628,11 @@ async function main() {
     }
     if (result.skipped.length > 0) {
       console.log(
-        `\n${result.skipped.length} file(s) were locked by the running app but are` +
-          " already identical on the host, so they were left alone:",
+        `${result.skipped.length} file(s) were already on the host at the right` +
+          " size and of a kind that settles it — content-hashed build output, or" +
+          " vendored packages with an unchanged dependency stamp — so they were" +
+          " left alone. The verify step checks every one of them anyway.",
       );
-      for (const name of result.skipped.slice(0, 10)) console.log(`  ${name}`);
     }
     if (result.failed.length > 0) {
       console.error(`\n${result.failed.length} file(s) could not be uploaded:`);
