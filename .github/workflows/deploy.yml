@@ -366,6 +366,15 @@ jobs:
           probe "/api/build (no database)" "http://$HOST_NAME/api/build"
           probe "/login (queries Postgres)" "http://$HOST_NAME/login"
 
+          # First, and in the last step of the job, because only the tail of a
+          # job log is readable through the API — and "what is actually live"
+          # is the one answer worth never having to guess at.
+          echo "=== what is live right now ==="
+          echo "  /api/build  -> $(curl -s --max-time 30 "http://$HOST_NAME/api/build")"
+          echo "  stylesheet  -> ${css:-none found}"
+          echo "  this commit -> $(git rev-parse --short HEAD)"
+          echo
+
           echo
           echo "The gap between the static file and /api/build is the Node app."
           echo "The gap between /api/build and /login is the database round trip."
