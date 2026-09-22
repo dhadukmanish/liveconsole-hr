@@ -1,5 +1,6 @@
 import { Suspense } from "react";
 import { NavProgress } from "@/components/nav-progress";
+import { BuildWatch } from "@/components/build-watch";
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
 import { Mukta, Mukta_Vaani } from "next/font/google";
@@ -85,6 +86,8 @@ export default async function RootLayout({
           <Suspense fallback={null}>
             <NavProgress />
           </Suspense>
+          {/* Fixes a phone still running an older build than the server. */}
+          <BuildWatch />
           {children}
         </NextIntlClientProvider>
       </body>
