@@ -409,6 +409,46 @@ jobs:
           done
           exit 0
 
+      # Everything needed to explain a server-side exception, in the last step
+      # of the job because only the tail of a job log is readable through the
+      # API. Reads only — nothing is written to the host.
+      - name: Why is it throwing
+        if: always()
+        env:
+          FTP_HOST: ${{ secrets.FTP_HOST }}
+          FTP_USER: ${{ secrets.FTP_USER }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_REMOTE: ${{ vars.FTP_REMOTE || '/' }}
+          HOST_NAME: ${{ vars.SITE_HOST || 'task.kriviinfotech.com' }}
+        run: |
+          set +e
+
+          echo "=== what the site says ==="
+          curl -s --max-time 30 "http://$HOST_NAME/login" \
+            | sed -e 's/<[^>]*>/ /g' -e 's/  */ /g' | grep -v '^ *$' | head -8
+
+          echo
+          echo "=== is the app's environment file on the host? (name and size only) ==="
+          # Never its contents: it holds the database password and the auth
+          # secret. Size alone answers "is it there and non-empty", which is the
+          # question a missing DATABASE_URL would be hiding behind.
+          node scripts/ftp-deploy.mjs --list --path . 2>&1 | grep -iE "^\s*\.env|\.env\b|web\.config|server\.js" | head
+
+          echo
+          echo "=== is the Windows query engine next to the Prisma client? ==="
+          # Built on Linux, run on Windows. Without query_engine-windows.dll.node
+          # every page that touches the database throws, and the symptom is
+          # exactly a server-side exception with a digest.
+          for dir in .next/standalone/node_modules/.prisma/client node_modules/.prisma/client; do
+            echo "--- $dir"
+            node scripts/ftp-deploy.mjs --list --path "$dir" 2>&1 | head -12
+          done
+
+          echo
+          echo "=== the host's own logs ==="
+          node scripts/ftp-deploy.mjs --logs 2>&1 | tail -60
+          exit 0
+
   handler:
     # The site answers an empty 500 and the stdout log is empty, so Node was
     # never started. Swapping only web.config costs seconds, so try each handler
